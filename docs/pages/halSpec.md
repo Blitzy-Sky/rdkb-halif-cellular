@@ -8,14 +8,19 @@
 | 10/09/24 | Removal of the `glib` headers from `cellular_hal.h`. | 1.0.1 |
 | Unreleased | Specification restructured onto the common RDK-B HAL topic set. Asynchronous notification model, return codes, data types and the complete API surface documented. | Unreleased |
 
+**Provenance of this page.** It was renamed from `docs/pages/CellularHalSpec.md` to `docs/pages/halSpec.md` in the same change that rewrote it against the canonical topic set. Git records a rename only where the two versions still resemble each other, and a full rewrite does not, so `git log --follow -- docs/pages/halSpec.md` begins at that change: the revisions before it are reached with `git log -- docs/pages/CellularHalSpec.md`.
+
 Four version identities are distinct for this interface and are not interchangeable. The table above
 records the **document revision**, sourced from `CHANGELOG.md` in the root of this repository, with
 dates taken from this repository's release tags (`1.0.0`: 6 June 2024; `1.0.1`: 9 October 2024).
 The **release tag** is `1.0.0` or `1.0.1`; those are the only two tags this repository carries. The
 **generated-site version string** is whatever `git describe --tags` reports when `generate_docs.sh`
-runs, which takes the form `1.0.1-3-ged0f68a` — a tag, the number of commits made since it, and the
-abbreviated commit; a string of that form denotes a point after a release and is not itself a
-version. There is no fourth identity: `cellular_hal.h` **declares no interface version macro of any
+runs, which takes the form `<tag>-<commits-since-tag>-g<abbreviated-commit>` — a tag, the number of
+commits made since it, and the abbreviated commit; a string of that form denotes a point after a
+release and is not itself a version. It is computed when the documentation is generated and changes
+with every commit, including the commit that would record it, so no literal value is reproduced
+here: a reader who needs the string for the revision in front of them runs `git describe --tags`
+against that revision. There is no fourth identity: `cellular_hal.h` **declares no interface version macro of any
 kind**, so a caller cannot determine at compile time or at run time which revision of the interface
 it has been built against. That absence is a property of the interface as published, and it is
 recorded here rather than filled with an assumed value.
@@ -260,6 +265,132 @@ order of severity, are:
 - **DEBUG:** Detailed information useful when diagnosing a problem.
 - **TRACE:** Very fine-grained logging to trace the internal flow of the system.
 
+**Values that must never be logged.** This interface carries subscriber identifiers and network
+credentials. The requirements below are **normative for this interface** rather than advisory, and
+they bind the vendor implementation and the `RDK-B` caller equally. They are stated here rather than
+left to be inferred because the interface declares no redaction helper, no sensitivity marker and no
+opaque credential type, so nothing enforces them mechanically, and because a debug line is the usual
+way such a value escapes a device.
+
+The protected class is exactly the following:
+
+- the device identity read by `cellular_hal_get_device_imei()` and the software version digits that
+  accompany it, read by `cellular_hal_get_device_imei_sv()`;
+- the card and subscription identifiers read by `cellular_hal_get_modem_current_iccid()` and
+  `cellular_hal_get_modem_current_msisdn()`, and the `iccid` and `msisdn` members of every
+  `CellularUICCSlotInfoStruct` filled by `cellular_hal_get_uicc_slot_info()`;
+- the authentication credentials and network configuration carried in the packet data protocol
+  context profile `CellularProfileStruct` — its `APN`, its `Username`, its `Password` and its
+  `Proxy` address — and in `CellularContextInitInputStruct`, which embeds one as its `stIfInput`
+  member, on every call that takes or returns either, which is `cellular_hal_init()`,
+  `cellular_hal_profile_create()`, `cellular_hal_profile_delete()`,
+  `cellular_hal_profile_modify()`, `cellular_hal_get_profile_list()` and
+  `cellular_hal_start_network()`.
+
+`cellular_hal.h` declares no accessor for the `IMSI` and carries no `IMSI` member in any structure,
+so this interface exposes no subscriber identity behind the card identifier; if a vendor path outside
+this interface makes one available, it belongs to the same class and is handled on the same terms.
+
+Every member of that class is handled on the following terms:
+
+- **The value, and every fragment, hash or length of it, is prohibited at every severity.** Neither
+  an implementation nor a caller may write a protected value — whole, truncated, prefixed, suffixed,
+  first-and-last character, encoded, encrypted, hashed, or reduced to a character count or a checksum
+  — to `cellular_vendor_hal.log`, to `syslog`, to a `printf` fallback, to standard output, to
+  standard error, to a trace buffer, to a `PDP` or modem transaction trace, or to any error or
+  exception message it constructs or propagates. This holds at every level of the ladder above,
+  `DEBUG` and `TRACE` included: a value too sensitive for `INFO` is not made acceptable by lowering
+  the severity, and a verbose or debug build is not a build in which these values may be logged. A
+  fragment is prohibited for the same reason as the value: the trailing digits of an `ICCID` or an
+  `MSISDN` are the part that distinguishes one subscriber from another, so publishing a suffix is
+  publishing the identification, and a length alone distinguishes an `IMEI` from an `ICCID` and one
+  credential format from another.
+- **A message that must refer to a protected value names the item and redacts the value.** Where a
+  log line has to identify which profile, slot or subscription an event concerns, it records the
+  operation, the outcome and a non-identifying reference — the `ProfileID`, the slot index, the
+  `PDPContextNumber` — and never the value. One **fixed redaction marker, the literal `[REDACTED]`**,
+  identical for every value and of a length unrelated to the value it replaces, is written in its
+  place: because the same
+  marker stands for a value from the 16-byte `imei` buffer and for one from the 21-byte `iccid`
+  buffer alike, it discloses neither the content nor the shape of what it hides.
+- **A rejected or malformed value is not logged either.** A failed profile creation or a rejected
+  credential is the case most likely to prompt an implementer to log the offending input, and the
+  case where doing so is most damaging: a rejected credential is frequently valid for another
+  profile, another device or another subscription. The verdict is logged; the input is not.
+- **Protected values are excluded from crash artefacts, support bundles and telemetry.** A core
+  dump, a minidump, a stack dump, a heap dump, a post-mortem or exception report, and a support or
+  bug-report bundle must not carry a protected value or any fragment, hash or length of one; neither
+  may any telemetry, analytics, metric, metric label or usage report. This is a separate obligation
+  from the logging rule and it fails separately — an implementation with disciplined logging still
+  discloses everything if it uploads an unfiltered core or tags a metric with a subscription number.
+  Where a platform's crash handler cannot be constrained, the value must not be resident when an
+  artefact can be taken, which is what the clearing rule below achieves as early as its sequencing
+  safely permits. Where retention is unresolved that window cannot be closed on return, which is why
+  the rule below requires the retention question to be settled with the implementer rather than
+  answered by an early overwrite.
+- **Protected values are cleared, and the order in which they are cleared is part of the
+  requirement.** Two kinds of storage hold these values and they are not cleared at the same moment,
+  so an instruction to "clear after use" would tell a caller to do something this interface makes
+  unsafe.
+  - **A copy the caller itself made is the caller's own storage.** No part of this interface holds a
+    pointer to it, so the caller overwrites each copy as soon as it has finished with that copy, on
+    every path including the failure path, because a failed read may have left part of a value
+    behind. This case is unconditional, and it is the one to prefer: a caller that needs an `IMEI`,
+    an `ICCID`, an `MSISDN` or a profile credential for longer than the supplied storage can safely
+    hold it takes its own copy, works from the copy, and erases the copy.
+  - **Storage the caller passed to a call, or supplied for a call to fill, is storage whose retention
+    this interface does not settle.** No declaration in `cellular_hal.h` states how long the
+    implementation may use the pointer, so the caller overwrites the `imei`, `imei_sv`, `iccid` and
+    `msisdn` buffers, the `CellularUICCSlotInfoStruct` it supplied and the `CellularProfileStruct` or
+    `CellularContextInitInputStruct` it passed **once the implementation's use of that storage has
+    ended — and immediately once it has.** That point is the return of the call where non-retention
+    has been established by inspection of the implementation or by contract with the vendor; it is
+    the completion reported at the installed handler for `cellular_hal_profile_create()`,
+    `cellular_hal_profile_delete()`, `cellular_hal_profile_modify()` and
+    `cellular_hal_start_network()`, which finish asynchronously; and it is otherwise the release that
+    ends the use.
+  - **Clearing passed or supplied storage on return, while retention is still unresolved, is not the
+    conservative reading of this rule.** If the implementation does hold the pointer, the overwrite
+    lands in a read or a write it is still performing: the profile description changes under the
+    profile call that is still consuming it, or the identifier buffer changes under the write that is
+    still filling it, and a caller that followed the security rule literally has introduced the
+    corruption the rule exists to prevent. Until retention is settled the caller keeps that
+    allocation dedicated to the value — not released to a general-purpose allocator, not reused for
+    unrelated data, not handed to a component with no need of it — and settles the question with the
+    implementer as part of integrating it, rather than leaving the value resident indefinitely or
+    clearing it early.
+  - **The array `cellular_hal_get_profile_list()` returns is the exception, because it is not the
+    caller's storage at all.** `cellular_hal.h` states that the ownership of that allocation is
+    unspecified and that the interface declares no matching free function, so a caller neither
+    overwrites nor frees it: writing into storage whose owner is unsettled may corrupt memory the
+    implementation still uses, and this interface names no point at which that becomes safe. A caller
+    clears its own copies of the entries on the terms above and settles the array's ownership and
+    erasure with the implementer.
+  - **No protected value is given a longer-lived home in the first place.** It is not copied into a
+    data-model cache, a configuration file, an environment variable, a message queue, a retry buffer,
+    a `URL` or a filename, and is not passed to a component that has no need of it; and an
+    implementation must not pass a protected value to a lower layer that logs it.
+- **The interface guarantees none of this.** It declares no scrubbing function, no opaque credential
+  type and no flag by which a caller could ask an implementation to suppress its own logging, and it
+  provides no way to verify that an implementation observes these rules. A caller integrating a
+  vendor implementation must therefore establish compliance by inspection or by contract rather than
+  assume it, and must treat the absence of these values from a vendor log, core or telemetry feed as
+  unverified until it has done so.
+
+This is a requirement on both parties rather than a recommendation to either, and it holds
+independently of the `Persistence Model`: nothing in this interface persists these values, so a copy
+that outlives the call is one the caller or the implementer created.
+
+*Derived from `cellular_hal.h` — the interface-wide sensitive-value statement in the `CELLULAR_HAL`
+group block, the warnings on `CellularProfileStruct` and `CellularUICCSlotInfoStruct`, and the
+warnings on `cellular_hal_get_device_imei`, `cellular_hal_get_device_imei_sv`,
+`cellular_hal_get_modem_current_iccid`, `cellular_hal_get_modem_current_msisdn`,
+`cellular_hal_get_uicc_slot_info`, `cellular_hal_init`, `cellular_hal_profile_create`,
+`cellular_hal_profile_delete`, `cellular_hal_profile_modify`, `cellular_hal_get_profile_list` and
+`cellular_hal_start_network` — together with the logging requirements carried by the previous
+revision of this page. The absence of an `IMSI` accessor is a statement about `cellular_hal.h`, which
+declares none.*
+
 ### Memory and performance requirements
 
 The Cellular `HAL` must not contribute disproportionately to memory or CPU utilization while
@@ -307,7 +438,7 @@ requirements. Thereafter, vendors are obliged to align their implementation with
 version of the interface. As per Service Level Agreement (SLA) terms, they may transition to newer
 versions based on demand needs.
 
-Each API interface will be versioned using [Semantic Versioning 2.0.0](https://semver.org/); the
+Each API interface will be versioned using [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html); the
 vendor code will comply with a specific version of the interface. Note that the versioning applies
 to the published interface, not to a symbol inside it: `cellular_hal.h` declares no version macro,
 so the version a caller has been built against cannot be read from the header at compile time or
@@ -413,6 +544,17 @@ ranges and buffer sizes — is carried by the inline documentation on each membe
 | `CellLocationInfoStruct` | Cell location identifiers: global cell identifier, band information and serving cell identifier. | `cellular_hal_get_cell_location_info()` |
 | `CellularCurrentPlmnInfoStruct` | The serving network: `PLMN` name, Mobile Country Code and Mobile Network Code, registration status, registered service type, roaming flag, area code and cell identifier. | `cellular_hal_get_current_plmn_information()` |
 | `CellularNetworkScanResultInfoStruct` | One scan result: network name, Mobile Country Code, Mobile Network Code and whether the network is allowed. | `cellular_hal_get_available_networks_information()` |
+
+**Two of these types carry sensitive values, and both parties are bound in handling them.**
+`CellularProfileStruct` carries the `APN`, the user name, the password and the proxy address of a
+`PDP` context; `CellularUICCSlotInfoStruct` carries the `ICCID` and the `MSISDN` of a card slot.
+Neither the implementer nor the caller may write any of those members to a log at any severity, place
+one in a diagnostic or telemetry record, or include one in an error message; where a reference is
+unavoidable the value is redacted, and a caller clears its own copy of the structure as soon as it
+has finished with that copy, and a structure it passed to or supplied for a call once the
+implementation's use of that storage has ended. The full obligation, its sequencing, and the list of
+every call that carries one of these values are stated under
+`Logging and debugging requirements`.
 
 **Configuration enumerations a caller supplies**
 
@@ -549,6 +691,15 @@ by the inline documentation on its declaration in
 - `cellular_hal_get_modem_current_msisdn()` \- reads the `MSISDN` of the active subscription.
 - `cellular_hal_get_modem_firmware_version()` \- reads the modem firmware version.
 
+The first four calls in that group return subscriber identifiers, and the buffer each one fills is
+the caller's. Neither the implementer nor the caller may log the value at any severity, copy it into
+a diagnostic or telemetry record, or include it in an error message, and the caller must overwrite
+any copy it made as soon as it has finished with that copy, and the buffer it supplied once it has
+finished with the value and the implementation's use of that buffer has ended. `cellular_hal_get_modem_firmware_version()` is not in
+that class: it reports the modem's firmware revision, which identifies no subscriber. The same
+obligation applies to `cellular_hal_get_uicc_slot_info()` and to the five profile-carrying calls, and
+is stated in full under `Logging and debugging requirements`.
+
 **Network scan and radio access technology**
 
 - `cellular_hal_get_available_networks_information()` \- returns the networks found by a scan,
@@ -565,11 +716,22 @@ by the inline documentation on its declaration in
 
 ### Sequence Diagram
 
-The exchange below shows a representative bring-up, a read and a teardown. Arrows from the vendor
-software back through the `HAL` to the caller are the asynchronous notifications described under
-`Asynchronous Notification Model`; they are delivered on the callbacks installed by
-`cellular_hal_open_device()` and `cellular_hal_start_network()` and are not return values of those
-calls.
+The exchange below shows a representative bring-up, a read and a teardown. Every arrow in it is an
+interaction this interface establishes, and each one is labelled with what that interaction carries:
+a caller-to-`HAL` arrow names the declared function being called, a `HAL`-to-caller arrow names
+either that function's return value or the callback typedef the notification is delivered on, and a
+vendor-to-`HAL` arrow names the condition being reported.
+
+Two things are deliberately **not** drawn. There is no `HAL`-to-vendor arrow for any of the nine
+calls, because this interface specifies only what crosses its own boundary and states nothing about
+what an implementation does below it — no message, no command set and no transport is named
+anywhere in `cellular_hal.h`, so any such arrow would be an invented step. And no arrow is drawn for
+a condition the interface declares no callback for, which is why `cellular_hal_stop_network()` and
+the read calls end at their return value.
+
+The notifications are the asynchronous deliveries described under `Asynchronous Notification Model`;
+they arrive on the callbacks installed by the call that starts the activity being reported on and
+are not return values of that call.
 
 ```mermaid
 sequenceDiagram
@@ -577,62 +739,50 @@ participant Caller as RDK-B Caller
 participant HAL as Cellular HAL
 participant Vendor as Vendor Software
 Caller->>HAL: cellular_hal_IsModemDevicePresent()
-HAL->>Vendor: 
-Vendor->>HAL: 
-HAL->>Caller: cellular_hal_IsModemDevicePresent() return
+HAL->>Caller: returns TRUE or FALSE for modem presence
 
 Caller->>HAL: cellular_hal_init()
-HAL->>Vendor: 
-Vendor->>HAL: 
-HAL->>Caller: cellular_hal_init() return
+HAL->>Caller: returns RETURN_OK or RETURN_ERROR
 
-Caller->>HAL: cellular_hal_open_device()
-HAL->>Vendor: 
-Vendor->>HAL: 
-HAL->>Caller: cellular_hal_open_device() return
-Vendor->>HAL: device open status
-HAL->>Caller: device open status callback
+Caller->>HAL: cellular_hal_open_device() installing CellularDeviceContextCBStruct
+HAL->>Caller: returns RETURN_OK or RETURN_ERROR
+Vendor->>HAL: modem device open progress and modem removal or detection
+HAL->>Caller: cellular_device_open_status_api_callback()
+HAL->>Caller: cellular_device_removed_status_api_callback()
 
-Caller->>HAL: cellular_hal_select_device_slot()
-HAL->>Vendor: 
-Vendor->>HAL: 
-HAL->>Caller: cellular_hal_select_device_slot() return
-Vendor->>HAL: slot status
-HAL->>Caller: device slot status callback
+Caller->>HAL: cellular_hal_select_device_slot() installing device_slot_status_cb
+HAL->>Caller: returns RETURN_OK or RETURN_ERROR
+Vendor->>HAL: card slot selection progress
+HAL->>Caller: cellular_device_slot_status_api_callback()
 
-Caller->>HAL: cellular_hal_monitor_device_registration()
-HAL->>Vendor: 
-Vendor->>HAL: 
-HAL->>Caller: cellular_hal_monitor_device_registration() return
-Vendor->>HAL: registration status
-HAL->>Caller: device registration status callback
+Caller->>HAL: cellular_hal_monitor_device_registration() installing device_registration_status_cb
+HAL->>Caller: returns RETURN_OK or RETURN_ERROR
+Vendor->>HAL: network registration and roaming change
+HAL->>Caller: cellular_device_registration_status_callback()
 
-Caller->>HAL: cellular_hal_profile_create()
-HAL->>Vendor: 
-Vendor->>HAL: 
-HAL->>Caller: cellular_hal_profile_create() return
-Vendor->>HAL: profile status
-HAL->>Caller: device profile status callback
+Caller->>HAL: cellular_hal_profile_create() installing device_profile_status_cb
+HAL->>Caller: returns RETURN_OK or RETURN_ERROR
+Vendor->>HAL: outcome of the profile operation
+HAL->>Caller: cellular_device_profile_status_api_callback()
 
-Caller->>HAL: cellular_hal_start_network()
-HAL->>Vendor: 
-Vendor->>HAL: 
-HAL->>Caller: cellular_hal_start_network() return
-Vendor->>HAL: packet service status
-HAL->>Caller: packet service status callback
-Vendor->>HAL: IP configuration ready
-HAL->>Caller: network IP ready callback
+Caller->>HAL: cellular_hal_start_network() installing CellularNetworkCBStruct
+HAL->>Caller: returns RETURN_OK or RETURN_ERROR
+Vendor->>HAL: packet service connected or disconnected
+HAL->>Caller: cellular_network_packet_service_status_api_callback()
+Vendor->>HAL: IP configuration readiness with the populated CellularIPStruct
+HAL->>Caller: cellular_device_network_ip_ready_api_callback()
 
 Caller->>HAL: cellular_hal_get_signal_info()
-HAL->>Vendor: 
-Vendor->>HAL: 
-HAL->>Caller: cellular_hal_get_signal_info() return
+HAL->>Caller: returns RETURN_OK or RETURN_ERROR with the filled signal structure
 
 Caller->>HAL: cellular_hal_stop_network()
-HAL->>Vendor: 
-Vendor->>HAL: 
-HAL->>Caller: cellular_hal_stop_network() return
+HAL->>Caller: returns RETURN_OK or RETURN_ERROR
 ```
+
+*Derived from the nine declarations named in the diagram and the seven callback typedefs tabulated
+under `Asynchronous Notification Model`, all in
+[`cellular_hal.h`](../../include/cellular_hal.h); the return vocabulary is the two codes named under
+`Internal Error Handling`.*
 
 ### State Diagram
 
