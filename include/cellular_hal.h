@@ -1138,27 +1138,16 @@ typedef int (*cellular_device_removed_status_api_callback)( char *device_name, C
 */
 typedef  struct
 {
-    cellular_device_open_status_api_callback device_open_status_cb;        /**< Open cellular device context.
-*                                                                              device_name - variable is a character pointer points the modem device name.
-*                                                                               It is a vendor specific value.
-*                                                                              wan_ifname - variable is a character pointer points the WAN interface name.
-*                                                                               Example: "wwan0"
-*                                                                              device_open_status variable is from the enumerated datatype.
-*                                                                               Possible values of device_open_status:
-*                                                                               It can hold any value from the enum CellularDeviceOpenStatus_t.
-*                                                                              modem_operating_mode variable is from the enumerated datatype.
-*                                                                               It can hold any value from the enum CellularModemOperatingConfiguration_t.
-*                                                                              Both string arguments are borrowed from the implementation for the
-*                                                                               duration of the call only. */
+    cellular_device_open_status_api_callback device_open_status_cb;        /*!< Reports how opening the modem device context proceeds. Receives the
+                                                                           *   vendor-specific modem device name, the WAN interface name the bearer is
+                                                                           *   presented on (for example "wwan0"), a CellularDeviceOpenStatus_t value and
+                                                                           *   a CellularModemOperatingConfiguration_t value. Both strings are borrowed
+                                                                           *   from the implementation for the duration of the call only. */
 
-    cellular_device_removed_status_api_callback device_remove_status_cb;    /**< Removed modem from device.
-*                                                                               device_name variable is a character pointer points the modem device name.
-*                                                                                It is a vendor specific value.
-*                                                                               device_detection_status variable is from the enumerated datatype.
-*                                                                                Possible values of device_detection_status:
-*                                                                                It can hold any value from the enum CellularDeviceDetectionStatus_t.
-*                                                                               The string argument is borrowed from the implementation for the
-*                                                                                duration of the call only. */
+    cellular_device_removed_status_api_callback device_remove_status_cb;    /*!< Reports that the modem device has been detected or removed.
+                                                                            *   Receives the vendor-specific modem device name and a
+                                                                            *   CellularDeviceDetectionStatus_t value. The string is borrowed from
+                                                                            *   the implementation for the duration of the call only. */
 } CellularDeviceContextCBStruct;
 
 /** @} */  //END OF GROUP CELLULAR_HAL_TYPES
@@ -2265,22 +2254,17 @@ typedef int (*cellular_device_network_ip_ready_api_callback)( CellularIPStruct *
 */
 typedef  struct
 {
-    cellular_device_network_ip_ready_api_callback device_network_ip_ready_cb;        /**< To get IP configuration from driver.
-*                                                                                        pstIPStruct - variable is a structure pointer from CellularIPStruct.
-*                                                                                        ip_ready_status - variable is from the enumerated datatype.
-*                                                                                         It can hold any value from the enum CellularDeviceIPReadyStatus_t.
-*                                                                                        The structure is owned by the implementation and borrowed for the
-*                                                                                         duration of the call only. */
-    cellular_network_packet_service_status_api_callback packet_service_status_cb;    /**< Packet service status after start network.
-*                                                                                        device_name - variable is a character pointer contains the modem device name.
-*                                                                                         The buffer size should be atleast 16 bytes long.
-*                                                                                         It is a vendor specific value.
-*                                                                                        ip_type - The enum which receives IP configuration.
-*                                                                                         It can hold any value from the enum CellularNetworkIPType_t.
-*                                                                                        packet_service_status is from the enumerated datatype CellularNetworkPacketStatus_t
-*                                                                                         It can hold any value from the enum CellularNetworkPacketStatus_t.
-*                                                                                        The string argument is borrowed from the implementation for the
-*                                                                                         duration of the call only. */
+    cellular_device_network_ip_ready_api_callback device_network_ip_ready_cb;        /*!< Delivers the IP configuration of a started network. Receives a
+                                                                                     *   CellularIPStruct the implementation owns and fills, and a
+                                                                                     *   CellularDeviceIPReadyStatus_t value stating whether that structure
+                                                                                     *   carries a usable configuration. The structure is borrowed for the
+                                                                                     *   duration of the call only. */
+    cellular_network_packet_service_status_api_callback packet_service_status_cb;    /*!< Reports whether packet service is carrying traffic once the
+                                                                                     *   network is started. Receives the vendor-specific modem device name in
+                                                                                     *   a buffer of at least 16 bytes, a CellularNetworkIPType_t value naming
+                                                                                     *   the address family the notification concerns, and a
+                                                                                     *   CellularNetworkPacketStatus_t value. The string is borrowed from the
+                                                                                     *   implementation for the duration of the call only. */
 } CellularNetworkCBStruct;
 
 /** @} */  //END OF GROUP CELLULAR_HAL_TYPES
