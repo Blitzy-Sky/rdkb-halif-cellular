@@ -4,15 +4,15 @@
 
 | Date | Comment | Version |
 | --- | --- | --- |
-| 06/06/24 | Initial release of the Cellular Manager HAL interface, migrated to GitHub. | 1.0.0 |
-| 10/09/24 | Removal of the `glib` headers from `cellular_hal.h`. | 1.0.1 |
+| 2024-06-06 | Initial release of the Cellular Manager HAL interface, migrated to GitHub. | 1.0.0 |
+| 2024-10-09 | Removal of the `glib` headers from `cellular_hal.h`. | 1.0.1 |
 | Unreleased | Specification restructured onto the common RDK-B HAL topic set. Asynchronous notification model, return codes, data types and the complete API surface documented. | Unreleased |
 
-**Provenance of this page.** It was renamed from `docs/pages/CellularHalSpec.md` to `docs/pages/halSpec.md` in the same change that rewrote it against the canonical topic set. Git records a rename only where the two versions still resemble each other, and a full rewrite does not, so `git log --follow -- docs/pages/halSpec.md` begins at that change: the revisions before it are reached with `git log -- docs/pages/CellularHalSpec.md`.
+**Provenance of this page.** It was renamed from `docs/pages/CellularHalSpec.md` to `docs/pages/halSpec.md` in the same change that rewrote it against the canonical topic set. Git records a rename only where the two versions still resemble each other, and a full rewrite does not, so `git log --follow -- docs/pages/halSpec.md` begins at that change: the revisions before it are reached with `git log -- docs/pages/CellularHalSpec.md`. That resemblance is measured, and the threshold is 50% by default, so lowering it to git's floor \- `git log --follow -M1% -- docs/pages/halSpec.md` \- is worth trying first: where it pairs the two paths it shows both stretches of history in one listing, and where the rewrite kept too little of the original for git to pair them at any threshold the second command above remains the only route to the earlier revisions.
 
 Four version identities are distinct for this interface and are not interchangeable. The table above
 records the **document revision**, sourced from `CHANGELOG.md` in the root of this repository, with
-dates taken from this repository's release tags (`1.0.0`: 6 June 2024; `1.0.1`: 9 October 2024).
+dates taken from this repository's release tags (`1.0.0`: 2024-06-06; `1.0.1`: 2024-10-09).
 The **release tag** is `1.0.0` or `1.0.1`; those are the only two tags this repository carries. The
 **generated-site version string** is whatever `git describe --tags` reports when `generate_docs.sh`
 runs, which takes the form `<tag>-<commits-since-tag>-g<abbreviated-commit>` — a tag, the number of
