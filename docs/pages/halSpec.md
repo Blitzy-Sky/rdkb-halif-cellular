@@ -8,10 +8,18 @@
 | 2024-10-09 | Removal of the `glib` headers from `cellular_hal.h`. | 1.0.1 |
 | Unreleased | Specification restructured onto the common RDK-B HAL topic set. Asynchronous notification model, return codes, data types and the complete API surface documented. | Unreleased |
 
-**Provenance of this page.** It was renamed from `docs/pages/CellularHalSpec.md` to `docs/pages/halSpec.md` in the same change that rewrote it against the canonical topic set. Git records a rename only where the two versions still resemble each other, and a full rewrite does not, so `git log --follow -- docs/pages/halSpec.md` begins at that change: the revisions before it are reached with `git log -- docs/pages/CellularHalSpec.md`. That resemblance is measured, and the threshold is 50% by default, so lowering it to git's floor \- `git log --follow -M1% -- docs/pages/halSpec.md` \- is worth trying first: where it pairs the two paths it shows both stretches of history in one listing, and where the rewrite kept too little of the original for git to pair them at any threshold the second command above remains the only route to the earlier revisions.
+**Provenance of this page.** It was renamed from `docs/pages/CellularHalSpec.md` to the canonical `docs/pages/` specification page in the same change that rewrote it against the canonical topic set. Git records a rename only where the two versions still resemble each other, and a full rewrite does not, so a `--follow` listing of the canonical path begins at that change, and the revisions before it are reached by listing the legacy path instead:
+
+```sh
+git log --follow -- docs/pages/halSpec.md
+git log --follow -M1% -- docs/pages/halSpec.md
+git log -- docs/pages/CellularHalSpec.md
+```
+
+That resemblance is measured, and the threshold is 50% by default, so lowering it to git's floor with the second command above is worth trying first: where it pairs the two paths it shows both stretches of history in one listing, and where the rewrite kept too little of the original for git to pair them at any threshold the third command remains the only route to the earlier revisions.
 
 Four version identities are distinct for this interface and are not interchangeable. The table above
-records the **document revision**, sourced from `CHANGELOG.md` in the root of this repository, with
+records the **document revision**, sourced from the changelog in the root of this repository, with
 dates taken from this repository's release tags (`1.0.0`: 2024-06-06; `1.0.1`: 2024-10-09).
 The **release tag** is `1.0.0` or `1.0.1`; those are the only two tags this repository carries. The
 **generated-site version string** is whatever `git describe --tags` reports when `generate_docs.sh`
@@ -409,8 +417,9 @@ robust memory management practices. This includes meticulous allocation, dealloc
 handling to guarantee a stable and leak-free operation.
 
 **Keeping this document accurate.** Every topic in this specification is derived from a named source:
-`cellular_hal.h` for the interface surface, its data types and its return codes; `CHANGELOG.md` and
-this repository's tags for `Version History`; and `docs/generate_docs.sh` for the generated-site
+`cellular_hal.h` for the interface surface, its data types and its return codes; the
+repository-root changelog and this repository's tags for `Version History`; and
+`docs/generate_docs.sh` for the generated-site
 version string. Any change to one of those files obliges a review of the topics that cite it. The
 reviewer responsible is the owner recorded in `.github/CODEOWNERS`, which assigns this repository to
 `@rdkcentral/rdkb-hal-advisory`.
@@ -470,7 +479,7 @@ vendor implementation and is not visible to a caller through these declarations.
 ## Interface API Documentation
 
 All `HAL` function prototypes and datatype definitions are available in the
-[`cellular_hal.h`](../../include/cellular_hal.h) file.
+`cellular_hal.h` file.
 
 1. Components and processes must include `cellular_hal.h` to make use of Cellular Manager `HAL`
    capabilities.
@@ -612,11 +621,11 @@ interpret it.
 
 ### API Surface
 
-`cellular_hal.h` declares 36 functions, grouped below by functional area. Every declaration returns
+[cellular_hal.h](../../include/cellular_hal.h) declares 36 functions, grouped below by functional area. Every declaration returns
 `int` and reports `RETURN_OK` or `RETURN_ERROR`, with the two exceptions noted explicitly. The
 argument ranges, buffer sizes, pre-conditions and per-code return semantics for each call are carried
 by the inline documentation on its declaration in
-[`cellular_hal.h`](../../include/cellular_hal.h).
+[cellular_hal.h](../../include/cellular_hal.h).
 
 **Modem detection and initialization**
 
@@ -781,7 +790,7 @@ HAL->>Caller: returns RETURN_OK or RETURN_ERROR
 
 *Derived from the nine declarations named in the diagram and the seven callback typedefs tabulated
 under `Asynchronous Notification Model`, all in
-[`cellular_hal.h`](../../include/cellular_hal.h); the return vocabulary is the two codes named under
+`cellular_hal.h`; the return vocabulary is the two codes named under
 `Internal Error Handling`.*
 
 ### State Diagram

@@ -27,7 +27,7 @@
 *
 * Reading this interface, three properties hold across every declaration and are
 * stated once here rather than repeated in full on each block. Each is sourced from
-* this repository's specification, docs/pages/halSpec.md, which is the authority for
+* this repository's specification, the HAL specification, which is the authority for
 * repository-wide policy; the declaration is the authority for interface scope.
 *
 * - Return vocabulary. This header defines exactly two status codes, RETURN_OK (0)
@@ -597,7 +597,7 @@ typedef struct
                                        *   (ITU-T E.118), so the two do not both fit: 20 digits occupy the member
                                        *   exactly and leave no room for a terminator. This member is therefore
                                        *   not guaranteed to be a C string. 'Memory Model' in
-                                       *   docs/pages/halSpec.md states the position this member is the extreme
+                                       *   the HAL specification states the position this member is the extreme
                                        *   case of: a termination obligation exists only where a declaration
                                        *   states one, and this declaration states none. A caller must read it as
                                        *   a fixed-width field of the member's own size - copying at most that
@@ -889,7 +889,8 @@ typedef enum _CellularNetworkPacketStatus_t
 * initialized caller uses to check whether the hardware is there, for instance while
 * waiting for the modem to come back after cellular_hal_modem_reset(); it is not a
 * discovery step that precedes initialization, because this interface requires
-* initialization first and excepts no call from that requirement - see @pre.
+* initialization first and excepts no call from that requirement, as the
+* precondition below records.
 *
 * @return Whether a modem device is present, as one of this header's two boolean
 *         values. TRUE (1) means a modem device is present; FALSE (0) means it is
@@ -902,7 +903,7 @@ typedef enum _CellularNetworkPacketStatus_t
 *         determined"; both are reported as FALSE.
 *
 * @pre cellular_hal_init() has returned RETURN_OK. 'Initialization and Startup' and
-*      'Method Sequencing' in docs/pages/halSpec.md state one ordering rule for this
+*      'Method Sequencing' in the HAL specification state one ordering rule for this
 *      interface - cellular_hal_init() is invoked before any other operation - and
 *      neither they nor this header excepts this query from it. Nothing here therefore
 *      makes this call available as a pre-initialization probe: issuing it before
@@ -914,12 +915,12 @@ typedef enum _CellularNetworkPacketStatus_t
 *
 * @note Blocking: synchronous. The result is the return value; nothing is reported
 *       through a callback. No timeout is specified for this call, per 'Blocking
-*       calls' in docs/pages/halSpec.md, so a caller that must bound its own latency
+*       calls' in the HAL specification, so a caller that must bound its own latency
 *       imposes that bound itself.
 * @note Presence can change: the modem may be removed after a TRUE result, which is
 *       the condition cellular_device_removed_status_api_callback reports. A caller
 *       must not cache the answer.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other
 *          Cellular HAL call, including calls issued from another process.
 * @see cellular_hal_IsModemControlInterfaceOpened, cellular_hal_open_device
@@ -936,7 +937,7 @@ unsigned int cellular_hal_IsModemDevicePresent(void);
 * there is no deinitialization call, so a caller cannot undo the effect through this
 * interface - cellular_hal_stop_network() stops a packet data network and does not
 * tear the layer down. How long the initialized state itself lasts is not stated
-* here; see @post.
+* here; the postcondition below records that.
 *
 * @param[in] pstCtxInputStruct variable is the Input structure to pass to cellular hal initialization function described by the CellularContextInitInputStruct.
 *                              \n The caller allocates the structure and retains
@@ -982,11 +983,11 @@ unsigned int cellular_hal_IsModemDevicePresent(void);
 *                      itself placed after a successful initialization by the
 *                      precondition on its own declaration. What is left to a caller
 *                      is a decision it takes on its own authority, per 'Internal
-*                      Error Handling' in docs/pages/halSpec.md, and not one this
+*                      Error Handling' in the HAL specification, and not one this
 *                      interface sanctions.
 *
 * @pre None. This call is the precondition of the others, not the other way round.
-*      'Initialization and Startup' and 'Method Sequencing' in docs/pages/halSpec.md
+*      'Initialization and Startup' and 'Method Sequencing' in the HAL specification
 *      state the rule as cellular_hal_init() being invoked before any other operation,
 *      and state no exception to it - the two boolean queries,
 *      cellular_hal_IsModemDevicePresent() and
@@ -1004,10 +1005,10 @@ unsigned int cellular_hal_IsModemDevicePresent(void);
 *       untouched, and must not treat a second call as a clean retry of the first.
 *
 * @note Blocking: synchronous, and this is the one call in the interface with a
-*       stated blocking behaviour - per 'Blocking calls' in docs/pages/halSpec.md it
+*       stated blocking behaviour - per 'Blocking calls' in the HAL specification it
 *       is expected to block while the modem hardware is not ready, which at boot is
 *       exactly when a caller invokes it. No timeout is specified.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: complete this call before any other call in
 *          this interface is issued from any thread or process, and serialise the
 *          calls that follow.
@@ -1070,7 +1071,7 @@ int cellular_hal_init(CellularContextInitInputStruct *pstCtxInputStruct);
 *       and do its work elsewhere. No deadline is specified.
 * @warning Thread safety is the callback author's obligation. This interface does not
 *          state the thread a callback arrives on, and 'Threading Model' in
-*          docs/pages/halSpec.md permits a vendor to use its own threads, so a
+*          the HAL specification permits a vendor to use its own threads, so a
 *          callback must assume it is not the thread that installed it and must
 *          synchronise access to any state it shares. It must not call back into this
 *          interface without serialising against the caller's other Cellular HAL
@@ -1131,7 +1132,7 @@ typedef int (*cellular_device_removed_status_api_callback)( char *device_name, C
 * survives a modem reset or factory reset. A caller therefore has no point at which
 * this interface makes invalidating one of these functions safe, and the conservative
 * consequence - stated under 'Asynchronous Notification Model' in
-* docs/pages/halSpec.md - is that it keeps both functions callable for as long as it
+* the HAL specification - is that it keeps both functions callable for as long as it
 * uses this interface. That follows from the silence and says nothing about the
 * implementation: it is neither a guarantee that delivery continues nor a bound on
 * how long it may continue.
@@ -1177,7 +1178,7 @@ typedef  struct
 *                           factory reset, so a caller has no point at which this
 *                           interface makes invalidating one of the two functions safe.
 *                           The conservative consequence - stated under 'Asynchronous
-*                           Notification Model' in docs/pages/halSpec.md - is that a
+*                           Notification Model' in the HAL specification - is that a
 *                           caller keeps both functions callable for as long as it uses
 *                           this interface, which follows from the silence and is
 *                           neither a guarantee that delivery continues nor a bound on
@@ -1217,7 +1218,7 @@ typedef  struct
 *       specified for either.
 * @note This interface declares no close or deinitialize call, so an opened device
 *       context cannot be released through this interface.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other
 *          Cellular HAL call, including calls issued from another process.
 * @see cellular_hal_IsModemControlInterfaceOpened, cellular_hal_select_device_slot
@@ -1243,7 +1244,7 @@ int cellular_hal_open_device(CellularDeviceContextCBStruct *pstDeviceCtxCB);
 *
 * @pre cellular_hal_init() has returned RETURN_OK, on exactly the terms stated under
 *      cellular_hal_IsModemDevicePresent(): 'Initialization and Startup' and 'Method
-*      Sequencing' in docs/pages/halSpec.md state one ordering rule for this interface
+*      Sequencing' in the HAL specification state one ordering rule for this interface
 *      - cellular_hal_init() is invoked before any other operation - and except this
 *      query from it no more than they except any other call, so issuing it before
 *      initialization has succeeded is outside what this interface specifies. Beyond
@@ -1253,10 +1254,10 @@ int cellular_hal_open_device(CellularDeviceContextCBStruct *pstDeviceCtxCB);
 * @post None. The call reports state and changes none.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
+*       the HAL specification.
 * @note The answer can change: a modem removal, reset or factory reset can close the
 *       control interface, so a caller must not cache it.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other
 *          Cellular HAL call, including calls issued from another process.
 * @see cellular_hal_open_device, cellular_hal_IsModemDevicePresent
@@ -1350,7 +1351,7 @@ typedef int (*cellular_device_slot_status_api_callback)( char *slot_name, char *
 *                                  point at which this interface makes invalidating the
 *                                  pointer safe. The conservative consequence - stated
 *                                  under 'Asynchronous Notification Model' in
-*                                  docs/pages/halSpec.md - is that a caller keeps the
+*                                  the HAL specification - is that a caller keeps the
 *                                  function callable for as long as it uses this
 *                                  interface, which follows from the silence and is
 *                                  neither a guarantee that delivery continues nor a
@@ -1374,7 +1375,7 @@ typedef int (*cellular_device_slot_status_api_callback)( char *slot_name, char *
 *
 * @pre cellular_hal_init() has returned RETURN_OK. This interface states no ordering
 *      constraint against cellular_hal_open_device() ('Method Sequencing' in
-*      docs/pages/halSpec.md), so a caller must not read a failure here as proof that
+*      the HAL specification), so a caller must not read a failure here as proof that
 *      the device is not open.
 * @post On success the selection is under way and the callback is installed. This
 *       interface states no lifetime for an installed callback - it declares no call
@@ -1387,7 +1388,7 @@ typedef int (*cellular_device_slot_status_api_callback)( char *slot_name, char *
 * @note Blocking: synchronous. The call returns a status; the outcome of the
 *       selection arrives asynchronously through the installed callback. No timeout is
 *       specified for either.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other
 *          Cellular HAL call, including calls issued from another process.
 * @see cellular_hal_sim_power_enable, cellular_hal_get_uicc_slot_info
@@ -1442,12 +1443,12 @@ int cellular_hal_select_device_slot(cellular_device_slot_status_api_callback dev
 *       with cellular_hal_get_uicc_slot_info().
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md, and powering a card is a hardware operation that may
+*       the HAL specification, and powering a card is a hardware operation that may
 *       take a perceptible time.
 * @note Powering a card off can invalidate the registration and any packet data
 *       network running on it. This interface does not state what happens to a
 *       started network when its card loses power.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other
 *          Cellular HAL call, including calls issued from another process.
 * @see cellular_hal_get_total_no_of_uicc_slots, cellular_hal_get_uicc_slot_info
@@ -1469,7 +1470,7 @@ int cellular_hal_sim_power_enable(unsigned int slot_id, unsigned char enable);
 *                         ownership of it. The implementation writes through the
 *                         pointer during the call. Whether it retains the pointer
 *                         afterwards is not specified by this interface, so - per
-*                         'Memory Model' in docs/pages/halSpec.md - a caller cannot
+*                         'Memory Model' in the HAL specification - a caller cannot
 *                         rely on either behaviour and keeps the storage valid and
 *                         unmoved for as long as it uses this interface. This
 *                         interface does not state whether NULL is accepted, so a
@@ -1500,8 +1501,8 @@ int cellular_hal_sim_power_enable(unsigned int slot_id, unsigned char enable);
 *       undefined. The call reports state and changes none.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+*       the HAL specification.
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other
 *          Cellular HAL call, including calls issued from another process.
 * @see cellular_hal_get_uicc_slot_info, cellular_hal_sim_power_enable
@@ -1535,7 +1536,7 @@ int cellular_hal_get_total_no_of_uicc_slots(unsigned int *total_count);
 *                           ownership of it. The implementation writes through the
 *                           pointer during the call. Whether it retains the pointer
 *                           afterwards is not specified by this interface, so - per
-*                           'Memory Model' in docs/pages/halSpec.md - a caller cannot
+*                           'Memory Model' in the HAL specification - a caller cannot
 *                           rely on either behaviour and keeps the storage valid and
 *                           unmoved for as long as it uses this interface. Must point
 *                           to storage for a whole CellularUICCSlotInfoStruct. Its
@@ -1576,10 +1577,10 @@ int cellular_hal_get_total_no_of_uicc_slots(unsigned int *total_count);
 *       contents are undefined. The call reports state and changes none.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
+*       the HAL specification.
 * @note The MnoName, iccid and msisdn members identify a subscriber. A caller must
 *       not log them.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other
 *          Cellular HAL call, including calls issued from another process.
 * @see cellular_hal_get_total_no_of_uicc_slots, cellular_hal_get_active_card_status
@@ -1600,7 +1601,7 @@ int cellular_hal_get_uicc_slot_info(unsigned int slot_index, CellularUICCSlotInf
 *                         retains ownership of it. The implementation writes through
 *                         the pointer during the call. Whether it retains the pointer
 *                         afterwards is not specified by this interface, so - per
-*                         'Memory Model' in docs/pages/halSpec.md - a caller cannot
+*                         'Memory Model' in the HAL specification - a caller cannot
 *                         rely on either behaviour and keeps the storage valid and
 *                         unmoved for as long as it uses this interface. This
 *                         interface does not state whether NULL is accepted, so a
@@ -1623,10 +1624,10 @@ int cellular_hal_get_uicc_slot_info(unsigned int slot_index, CellularUICCSlotInf
 *       undefined. The call reports state and changes none.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
+*       the HAL specification.
 * @note This interface declares no call that unblocks a blocked card, so
 *       CELLULAR_UICC_STATUS_BLOCKED cannot be resolved through it.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other
 *          Cellular HAL call, including calls issued from another process.
 * @see cellular_hal_get_uicc_slot_info, cellular_hal_sim_power_enable
@@ -1718,7 +1719,7 @@ typedef int (*cellular_device_registration_status_callback)( CellularDeviceNASSt
 *                                          invalidating the pointer safe. The
 *                                          conservative consequence - stated under
 *                                          'Asynchronous Notification Model' in
-*                                          docs/pages/halSpec.md - is that a caller
+*                                          the HAL specification - is that a caller
 *                                          keeps the function callable for as long as it
 *                                          uses this interface, which follows from the
 *                                          silence and is neither a guarantee that
@@ -1744,7 +1745,7 @@ typedef int (*cellular_device_registration_status_callback)( CellularDeviceNASSt
 * @pre cellular_hal_init() has returned RETURN_OK. Beyond that this interface states
 *      no ordering constraint - a caller must not infer that registration monitoring
 *      has to begin before a network is started ('Method Sequencing' in
-*      docs/pages/halSpec.md).
+*      the HAL specification).
 * @post On success monitoring is under way and the callback is installed. What is
 *       established about that installation is only that this interface declares no
 *       call that removes it, so a caller cannot stop the notification it started. How
@@ -1760,7 +1761,7 @@ typedef int (*cellular_device_registration_status_callback)( CellularDeviceNASSt
 * @note Blocking: synchronous. The call returns a status; registration changes arrive
 *       asynchronously through the installed callback. No timeout is specified for
 *       either.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other
 *          Cellular HAL call, including calls issued from another process.
 * @see cellular_hal_get_current_plmn_information, cellular_hal_set_modem_network_attach
@@ -1857,7 +1858,7 @@ typedef int (*cellular_device_profile_status_api_callback)( char *profile_id, Ce
 *                                     caller has no point at which this interface makes
 *                                     invalidating the pointer safe. The conservative
 *                                     consequence - stated under 'Asynchronous
-*                                     Notification Model' in docs/pages/halSpec.md - is
+*                                     Notification Model' in the HAL specification - is
 *                                     that a caller keeps the function callable for as
 *                                     long as it uses this interface, which follows
 *                                     from the silence and is neither a guarantee that
@@ -1881,7 +1882,7 @@ typedef int (*cellular_device_profile_status_api_callback)( char *profile_id, Ce
 *
 * @pre cellular_hal_init() has returned RETURN_OK. This interface states no further
 *      ordering constraint, so a caller must not infer that a card slot has to be
-*      selected first ('Method Sequencing' in docs/pages/halSpec.md).
+*      selected first ('Method Sequencing' in the HAL specification).
 * @post On success profile creation or default selection is under way and the callback
 *       is installed. This interface states no lifetime for an installed callback - it
 *       declares no call that removes one and does not state how long notification may
@@ -1894,9 +1895,9 @@ typedef int (*cellular_device_profile_status_api_callback)( char *profile_id, Ce
 *       asynchronously through the installed callback. No timeout is specified for
 *       either.
 * @note Persistence is not this interface's business: per 'Persistence Model' in
-*       docs/pages/halSpec.md a caller that needs a profile to survive a restart
+*       the HAL specification a caller that needs a profile to survive a restart
 *       persists it itself.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other
 *          Cellular HAL call, including calls issued from another process.
 * @see cellular_hal_profile_modify, cellular_hal_profile_delete, cellular_hal_get_profile_list
@@ -1933,7 +1934,7 @@ int cellular_hal_profile_create(CellularProfileStruct *pstProfileInput, cellular
 *                                       interface makes invalidating the pointer safe.
 *                                       The conservative consequence - stated under
 *                                       'Asynchronous Notification Model' in
-*                                       docs/pages/halSpec.md - is that a caller keeps
+*                                       the HAL specification - is that a caller keeps
 *                                       the function callable for as long as it uses
 *                                       this interface, which follows from the silence
 *                                       and is neither a guarantee that delivery
@@ -1965,7 +1966,7 @@ int cellular_hal_profile_create(CellularProfileStruct *pstProfileInput, cellular
 * @note Blocking: synchronous. The call returns a status; the outcome arrives
 *       asynchronously through the installed callback. No timeout is specified for
 *       either.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other
 *          Cellular HAL call, including calls issued from another process.
 * @see cellular_hal_profile_create, cellular_hal_profile_modify, cellular_hal_stop_network
@@ -2005,7 +2006,7 @@ int cellular_hal_profile_delete(CellularProfileStruct *pstProfileInput, cellular
 *                                       interface makes invalidating the pointer safe.
 *                                       The conservative consequence - stated under
 *                                       'Asynchronous Notification Model' in
-*                                       docs/pages/halSpec.md - is that a caller keeps
+*                                       the HAL specification - is that a caller keeps
 *                                       the function callable for as long as it uses
 *                                       this interface, which follows from the silence
 *                                       and is neither a guarantee that delivery
@@ -2035,7 +2036,7 @@ int cellular_hal_profile_delete(CellularProfileStruct *pstProfileInput, cellular
 * @note Blocking: synchronous. The call returns a status; the outcome arrives
 *       asynchronously through the installed callback. No timeout is specified for
 *       either.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other
 *          Cellular HAL call, including calls issued from another process.
 * @see cellular_hal_profile_create, cellular_hal_profile_delete, cellular_hal_get_profile_list
@@ -2058,7 +2059,7 @@ int cellular_hal_profile_modify(CellularProfileStruct *pstProfileInput, cellular
 *                                 the implementation writes through its address during
 *                                 the call. Whether it retains that address afterwards
 *                                 is not specified by this interface, so - per 'Memory
-*                                 Model' in docs/pages/halSpec.md - a caller cannot
+*                                 Model' in the HAL specification - a caller cannot
 *                                 rely on either behaviour and keeps the pointer
 *                                 variable itself valid and unmoved for as long as it
 *                                 uses this interface. The array the variable is
@@ -2067,7 +2068,7 @@ int cellular_hal_profile_modify(CellularProfileStruct *pstProfileInput, cellular
 *                                 by this interface. It states neither which side
 *                                 allocates it, nor - if the implementation allocates
 *                                 it - which function releases it, and 'Memory Model'
-*                                 in docs/pages/halSpec.md records the same gap from
+*                                 in the HAL specification records the same gap from
 *                                 the caller's side. What is established is only this:
 *                                 on RETURN_OK the pointer addresses profile_count
 *                                 elements that may be read.
@@ -2117,12 +2118,12 @@ int cellular_hal_profile_modify(CellularProfileStruct *pstProfileInput, cellular
 *       state and changes none.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
+*       the HAL specification.
 * @note The Username and Password members of a returned profile are credentials. This
 *       interface does not state whether an implementation returns them populated or
 *       cleared, so a caller must treat the whole structure as sensitive and must not
 *       log it.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other
 *          Cellular HAL call, including calls issued from another process. The array
 *          compounds that obligation rather than softening it: because this interface
@@ -2247,7 +2248,7 @@ typedef int (*cellular_device_network_ip_ready_api_callback)( CellularIPStruct *
 * ends, and does not state whether an installed callback survives a modem reset or
 * factory reset, so a caller has no point at which this interface makes invalidating
 * one of these functions safe. The conservative consequence - stated under
-* 'Asynchronous Notification Model' in docs/pages/halSpec.md - is that a caller keeps
+* 'Asynchronous Notification Model' in the HAL specification - is that a caller keeps
 * both functions callable for as long as it uses this interface, which follows from the
 * silence and is neither a guarantee that delivery continues nor a bound on how long it
 * may continue.
@@ -2312,7 +2313,7 @@ typedef  struct
 *                          point at which this interface makes invalidating one of the
 *                          two functions safe. The conservative consequence - stated
 *                          under 'Asynchronous Notification Model' in
-*                          docs/pages/halSpec.md - is that a caller keeps both functions
+*                          the HAL specification - is that a caller keeps both functions
 *                          callable for as long as it uses this interface, which follows
 *                          from the silence and is neither a guarantee that delivery
 *                          continues nor a bound on how long it may continue. This
@@ -2335,7 +2336,7 @@ typedef  struct
 *
 * @pre cellular_hal_init() has returned RETURN_OK. Registration is what actually makes
 *      a start possible, but this interface states no ordering constraint that requires
-*      it ('Method Sequencing' in docs/pages/halSpec.md), so a caller must not read a
+*      it ('Method Sequencing' in the HAL specification), so a caller must not read a
 *      failure here as proof that the modem is unregistered.
 * @post On success the start is under way and both callbacks are installed. This
 *       interface states no lifetime for an installed callback - it declares no call
@@ -2352,7 +2353,7 @@ typedef  struct
 *       either, and bringing up a bearer can take a perceptible time.
 * @note This interface does not state whether two families may be started at once, nor
 *       what a second start for a family already running does.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_stop_network, cellular_hal_get_packet_statistics, cellular_hal_profile_create
@@ -2407,8 +2408,8 @@ int cellular_hal_start_network( CellularNetworkIPType_t ip_request_type, Cellula
 *       state whether the network was partly torn down.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md, and tearing down a bearer can take a perceptible time.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+*       the HAL specification, and tearing down a bearer can take a perceptible time.
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_start_network, cellular_hal_get_packet_statistics
@@ -2428,7 +2429,7 @@ int cellular_hal_stop_network(CellularNetworkIPType_t ip_request_type);
 *                         of it. The implementation writes through the pointer during
 *                         the call. Whether it retains the pointer afterwards is not
 *                         specified by this interface, so - per 'Memory Model' in
-*                         docs/pages/halSpec.md - a caller cannot rely on either
+*                         the HAL specification - a caller cannot rely on either
 *                         behaviour and keeps the storage valid and unmoved for as
 *                         long as it uses this interface. Must point to storage for a
 *                         whole CellularSignalInfoStruct. Read its members with their
@@ -2455,8 +2456,8 @@ int cellular_hal_stop_network(CellularNetworkIPType_t ip_request_type);
 *       contents are undefined. The call reports state and changes none.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+*       the HAL specification.
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_get_cell_location_info, cellular_hal_get_current_plmn_information
@@ -2476,7 +2477,7 @@ int cellular_hal_get_signal_info(CellularSignalInfoStruct *signal_info);
 *                      it. The implementation writes through the pointer during the
 *                      call. Whether it retains the pointer afterwards is not specified
 *                      by this interface, so - per 'Memory Model' in
-*                      docs/pages/halSpec.md - a caller cannot rely on either behaviour
+*                      the HAL specification - a caller cannot rely on either behaviour
 *                      and keeps the storage valid and unmoved for as long as it uses
 *                      this interface. Must point to storage for a whole
 *                      CellLocationInfoStruct. Every member is an unsigned int, so each
@@ -2501,10 +2502,10 @@ int cellular_hal_get_signal_info(CellularSignalInfoStruct *signal_info);
 *       contents are undefined. The call reports state and changes none.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
+*       the HAL specification.
 * @note A cell identifier locates a device geographically to within the cell's
 *       coverage. A caller should treat it as it treats any location data.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_get_signal_info, cellular_hal_get_current_plmn_information
@@ -2563,14 +2564,14 @@ int cellular_hal_get_cell_location_info(CellLocationInfoStruct *loc_info);
 *       interface does not state whether the command was partly applied.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md, and a reset is a hardware operation that may take a
+*       the HAL specification, and a reset is a hardware operation that may take a
 *       perceptible time.
 * @warning CELLULAR_MODEM_SET_FACTORY_RESET destroys configuration that this interface
 *          cannot restore, including every profile. A caller must not issue it as part
 *          of error recovery without having persisted whatever it needs to recreate -
-*          per 'Persistence Model' in docs/pages/halSpec.md the HAL persists nothing on
+*          per 'Persistence Model' in the HAL specification the HAL persists nothing on
 *          the caller's behalf.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_modem_reset, cellular_hal_modem_factory_reset, cellular_hal_sim_power_enable
@@ -2590,7 +2591,7 @@ int cellular_hal_set_modem_operating_configuration(CellularModemOperatingConfigu
 *                  \n The caller allocates the buffer and retains ownership of it. The
 *                  implementation writes the identity into it during the call. Whether
 *                  it retains the pointer afterwards is not specified by this interface,
-*                  so - per 'Memory Model' in docs/pages/halSpec.md - a caller cannot
+*                  so - per 'Memory Model' in the HAL specification - a caller cannot
 *                  rely on either behaviour and keeps the buffer valid and unmoved for
 *                  as long as it uses this interface. Must not be NULL.
 *                  \n Sizing it correctly is the caller's responsibility and this call
@@ -2634,10 +2635,10 @@ int cellular_hal_set_modem_operating_configuration(CellularModemOperatingConfigu
 *       is hardware and this interface publishes no call that changes it.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
+*       the HAL specification.
 * @warning An IMEI identifies a specific piece of equipment and is treated as
 *          personal data in several jurisdictions. A caller must not write it to a log.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_get_device_imei_sv, cellular_hal_get_modem_current_iccid
@@ -2658,7 +2659,7 @@ int cellular_hal_get_device_imei ( char *imei );
 *                     The implementation writes the value into it during the call.
 *                     Whether it retains the pointer afterwards is not specified by
 *                     this interface, so - per 'Memory Model' in
-*                     docs/pages/halSpec.md - a caller cannot rely on either behaviour
+*                     the HAL specification - a caller cannot rely on either behaviour
 *                     and keeps the buffer valid and unmoved for as long as it uses
 *                     this interface. Must not be NULL.
 *                     \n As with cellular_hal_get_device_imei(), no length argument
@@ -2698,13 +2699,13 @@ int cellular_hal_get_device_imei ( char *imei );
 *       contents are undefined. The call reports state and changes none.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
+*       the HAL specification.
 * @note The software version this reports is the modem's, and this interface does not
 *       state its relationship to the string
 *       cellular_hal_get_modem_firmware_version() returns.
 * @warning Where the value carries the full IMEISV it identifies a specific piece of
 *          equipment. A caller must not write it to a log.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_get_device_imei, cellular_hal_get_modem_firmware_version
@@ -2723,7 +2724,7 @@ int cellular_hal_get_device_imei_sv ( char *imei_sv );
 *                   \n The caller allocates the buffer and retains ownership of it.
 *                   The implementation writes the identifier into it during the call.
 *                   Whether it retains the pointer afterwards is not specified by this
-*                   interface, so - per 'Memory Model' in docs/pages/halSpec.md - a
+*                   interface, so - per 'Memory Model' in the HAL specification - a
 *                   caller cannot rely on either behaviour and keeps the buffer valid
 *                   and unmoved for as long as it uses this interface. Must not be
 *                   NULL. No length argument accompanies the pointer, so the
@@ -2757,12 +2758,12 @@ int cellular_hal_get_device_imei_sv ( char *imei_sv );
 *       contents are undefined. The call reports state and changes none.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
+*       the HAL specification.
 * @note The value can change: powering a slot, selecting another slot or resetting the
 *       modem can change which card is active, so a caller must not cache it.
 * @warning An ICCID identifies a subscriber's card. A caller must not write it to a
 *          log.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_get_modem_current_msisdn, cellular_hal_get_uicc_slot_info
@@ -2780,7 +2781,7 @@ int cellular_hal_get_modem_current_iccid ( char *iccid );
 *                    \n The caller allocates the buffer and retains ownership of it.
 *                    The implementation writes the number into it during the call.
 *                    Whether it retains the pointer afterwards is not specified by
-*                    this interface, so per 'Memory Model' in docs/pages/halSpec.md a
+*                    this interface, so per 'Memory Model' in the HAL specification a
 *                    caller cannot rely on either behaviour and keeps the buffer valid
 *                    and unmoved for as long as it uses this interface. Must not be
 *                    NULL. No length argument accompanies the pointer, so the
@@ -2819,9 +2820,9 @@ int cellular_hal_get_modem_current_iccid ( char *iccid );
 *       contents are undefined. The call reports state and changes none.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
+*       the HAL specification.
 * @warning An MSISDN identifies a subscriber. A caller must not write it to a log.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_get_modem_current_iccid, cellular_hal_get_uicc_slot_info
@@ -2842,7 +2843,7 @@ int cellular_hal_get_modem_current_msisdn ( char *msisdn );
 *                                  the pointer during the call. Whether it retains the
 *                                  pointer afterwards is not specified by this
 *                                  interface, so per 'Memory Model' in
-*                                  docs/pages/halSpec.md a caller cannot rely on either
+*                                  the HAL specification a caller cannot rely on either
 *                                  behaviour and keeps the storage valid and unmoved
 *                                  for as long as it uses this interface. Must point to
 *                                  storage for a whole CellularPacketStatsStruct. This
@@ -2872,11 +2873,11 @@ int cellular_hal_get_modem_current_msisdn ( char *msisdn );
 *       interface publishes no call that resets a counter.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
+*       the HAL specification.
 * @note The counters are not stated to be read atomically with respect to each other,
 *       so a caller must not assume that bytes and packets in one snapshot are exactly
 *       consistent.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_start_network, cellular_hal_stop_network
@@ -2896,7 +2897,7 @@ int cellular_hal_get_packet_statistics( CellularPacketStatsStruct *network_packe
 *                    structure. The caller allocates the variable and retains ownership
 *                    of it. The implementation writes through the pointer during the
 *                    call. Whether it retains the pointer afterwards is not specified by
-*                    this interface, so per 'Memory Model' in docs/pages/halSpec.md a
+*                    this interface, so per 'Memory Model' in the HAL specification a
 *                    caller cannot rely on either behaviour and keeps the storage valid
 *                    and unmoved for as long as it uses this interface. This interface
 *                    does not state whether NULL is accepted.
@@ -2920,11 +2921,11 @@ int cellular_hal_get_packet_statistics( CellularPacketStatsStruct *network_packe
 *       undefined. The call reports state and changes none.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
+*       the HAL specification.
 * @note This interface specifies no transition set over CellularInterfaceStatus_t, so a
 *       caller may read the current value but must not infer which status can follow
 *       which.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_get_current_plmn_information, cellular_hal_monitor_device_registration
@@ -2956,18 +2957,18 @@ int cellular_hal_get_current_modem_interface_status( CellularInterfaceStatus_t *
 *
 * @pre cellular_hal_init() has returned RETURN_OK. A usable card is what makes an
 *      attach possible, but this interface states no ordering constraint that requires
-*      one ('Method Sequencing' in docs/pages/halSpec.md), so a caller must not read a
+*      one ('Method Sequencing' in the HAL specification), so a caller must not read a
 *      failure as proof that the card is at fault.
 * @post On success the attach is under way. This interface states no time bound for it
 *       and no completion notification of its own. On failure this interface does not
 *       state whether a partial attach remains.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md, and network registration can take a perceptible time.
+*       the HAL specification, and network registration can take a perceptible time.
 * @note This interface does not state what an attach does to a packet data network
 *       already running, nor whether an attach is required before
 *       cellular_hal_start_network() succeeds.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_set_modem_network_detach, cellular_hal_monitor_device_registration
@@ -3006,8 +3007,8 @@ int cellular_hal_set_modem_network_attach( void );
 *       state whether a partial detach remains.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+*       the HAL specification.
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_set_modem_network_attach, cellular_hal_stop_network
@@ -3026,7 +3027,7 @@ int cellular_hal_set_modem_network_detach( void );
 *                              ownership of it. The implementation writes the version
 *                              string into it during the call. Whether it retains the
 *                              pointer afterwards is not specified by this interface,
-*                              so per 'Memory Model' in docs/pages/halSpec.md a caller
+*                              so per 'Memory Model' in the HAL specification a caller
 *                              cannot rely on either behaviour and keeps the buffer
 *                              valid and unmoved for as long as it uses this
 *                              interface. Must not be NULL. No length argument
@@ -3062,12 +3063,12 @@ int cellular_hal_set_modem_network_detach( void );
 *       contents are undefined. The call reports state and changes none.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
+*       the HAL specification.
 * @note This interface publishes no call that updates modem firmware, so nothing here
 *       changes the value. It does not state whether cellular_hal_modem_reset() or
 *       cellular_hal_modem_factory_reset() can change it, so a caller that cached the
 *       string re-reads it after a reset rather than assuming it still holds.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_get_device_imei_sv
@@ -3089,7 +3090,7 @@ int cellular_hal_get_modem_firmware_version(char *firmware_version);
 *                       retains ownership of it. The implementation writes the serving
 *                       network's details through the pointer during the call. Whether
 *                       it retains the pointer afterwards is not specified by this
-*                       interface, so per 'Memory Model' in docs/pages/halSpec.md a
+*                       interface, so per 'Memory Model' in the HAL specification a
 *                       caller cannot rely on either behaviour and keeps the storage
 *                       valid and unmoved for as long as it uses this interface. Must
 *                       point to storage for a whole CellularCurrentPlmnInfoStruct;
@@ -3119,11 +3120,11 @@ int cellular_hal_get_modem_firmware_version(char *firmware_version);
 *       contents are undefined. The call reports state and changes none.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
+*       the HAL specification.
 * @note The cell_id member here is an unsigned long while the identifiers in
 *       CellLocationInfoStruct are unsigned int, and this interface does not state
 *       whether the two agree.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_monitor_device_registration, cellular_hal_get_cell_location_info
@@ -3146,7 +3147,7 @@ int cellular_hal_get_current_plmn_information(CellularCurrentPlmnInfoStruct *plm
 *                          caller owns that pointer variable, and the implementation
 *                          writes through its address during the call. Whether it
 *                          retains that address afterwards is not specified by this
-*                          interface, so per 'Memory Model' in docs/pages/halSpec.md a
+*                          interface, so per 'Memory Model' in the HAL specification a
 *                          caller cannot rely on either behaviour and keeps the pointer
 *                          variable itself valid and unmoved for as long as it uses
 *                          this interface. The array the variable is pointed at is a
@@ -3154,7 +3155,7 @@ int cellular_hal_get_current_plmn_information(CellularCurrentPlmnInfoStruct *plm
 *                          \n Allocation of the array itself is not established by this
 *                          interface. It states neither which side allocates it, nor -
 *                          if the implementation allocates it - which function releases
-*                          it, and 'Memory Model' in docs/pages/halSpec.md records the
+*                          it, and 'Memory Model' in the HAL specification records the
 *                          same gap from the caller's side. What is established is only
 *                          this: on RETURN_OK the pointer addresses
 *                          total_network_count elements that may be read.
@@ -3208,12 +3209,12 @@ int cellular_hal_get_current_plmn_information(CellularCurrentPlmnInfoStruct *plm
 * @note Blocking: synchronous, and this call is the one most likely to be slow: where an
 *       implementation performs the scan inline it must search the bands, which on
 *       cellular hardware takes seconds rather than milliseconds. No timeout is
-*       specified, per 'Blocking calls' in docs/pages/halSpec.md, so a caller that
+*       specified, per 'Blocking calls' in the HAL specification, so a caller that
 *       cannot afford the wait must not issue it on a latency-sensitive thread.
 * @note A scan can interrupt service on some modems. This interface does not state
 *       whether a scan affects an existing registration or a running packet data
 *       network.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process. The array compounds
 *          that obligation: because this interface specifies no lifetime for it, the
@@ -3240,7 +3241,7 @@ int cellular_hal_get_available_networks_information(CellularNetworkScanResultInf
 *                           of it. The implementation writes the preference into it
 *                           during the call. Whether it retains the pointer afterwards
 *                           is not specified by this interface, so per 'Memory Model'
-*                           in docs/pages/halSpec.md a caller cannot rely on either
+*                           in the HAL specification a caller cannot rely on either
 *                           behaviour and keeps the buffer valid and unmoved for as
 *                           long as it uses this interface. Must not be NULL. No
 *                           length argument accompanies the pointer, so the
@@ -3278,8 +3279,8 @@ int cellular_hal_get_available_networks_information(CellularNetworkScanResultInf
 *       are undefined. The call reports state and changes none.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+*       the HAL specification.
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_set_modem_preferred_radio_technology, cellular_hal_get_modem_supported_radio_technology
@@ -3346,8 +3347,8 @@ int cellular_hal_get_modem_preferred_radio_technology( char *preferred_rat );
 *       whether the preference was partly applied.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md, and a reselection can take a perceptible time.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+*       the HAL specification, and a reselection can take a perceptible time.
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_get_modem_preferred_radio_technology, cellular_hal_get_modem_supported_radio_technology
@@ -3369,7 +3370,7 @@ int cellular_hal_set_modem_preferred_radio_technology( char *preferred_rat );
 *                         it. The implementation writes the technology name into it
 *                         during the call. Whether it retains the pointer afterwards
 *                         is not specified by this interface, so per 'Memory Model' in
-*                         docs/pages/halSpec.md a caller cannot rely on either
+*                         the HAL specification a caller cannot rely on either
 *                         behaviour and keeps the buffer valid and unmoved for as long
 *                         as it uses this interface. Must not be NULL. No length
 *                         argument accompanies the pointer, so the implementation
@@ -3404,9 +3405,9 @@ int cellular_hal_set_modem_preferred_radio_technology( char *preferred_rat );
 *       contents are undefined. The call reports state and changes none.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
+*       the HAL specification.
 * @note The value changes as the modem reselects, so a caller must not cache it.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_get_modem_preferred_radio_technology, cellular_hal_get_signal_info
@@ -3428,7 +3429,7 @@ int cellular_hal_get_modem_current_radio_technology( char *current_rat );
 *                           of it. The implementation writes the capability string
 *                           into it during the call. Whether it retains the pointer
 *                           afterwards is not specified by this interface, so per
-*                           'Memory Model' in docs/pages/halSpec.md a caller cannot
+*                           'Memory Model' in the HAL specification a caller cannot
 *                           rely on either behaviour and keeps the buffer valid and
 *                           unmoved for as long as it uses this interface. Must not be
 *                           NULL. No length argument accompanies the pointer, so the
@@ -3462,10 +3463,10 @@ int cellular_hal_get_modem_current_radio_technology( char *current_rat );
 *       contents are undefined. The call reports state and changes none.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md.
+*       the HAL specification.
 * @note The set is a property of the modem, so it does not change between calls unless
 *       the modem's firmware does.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process.
 * @see cellular_hal_set_modem_preferred_radio_technology, cellular_hal_get_modem_current_radio_technology
@@ -3503,7 +3504,7 @@ int cellular_hal_get_modem_supported_radio_technology ( char *supported_rat );
 *
 * @pre cellular_hal_init() has returned RETURN_OK. Anything the caller needs to
 *      recreate afterwards must already be persisted: per 'Persistence Model' in
-*      docs/pages/halSpec.md the HAL persists nothing on the caller's behalf.
+*      the HAL specification the HAL persists nothing on the caller's behalf.
 * @post On success the modem restarts with no configuration. The control interface, the
 *       card selection, the registration, every profile and any started network must be
 *       treated as gone, and the caller re-establishes them from
@@ -3511,11 +3512,11 @@ int cellular_hal_get_modem_supported_radio_technology ( char *supported_rat );
 *       whether the reset was partly performed.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md, and a factory reset is a hardware operation that takes a
+*       the HAL specification, and a factory reset is a hardware operation that takes a
 *       perceptible time.
 * @warning This call destroys configuration that this interface cannot restore. A
 *          caller must not issue it as a step in routine error recovery.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process. A concurrent call is
 *          especially unsafe here, because the reset invalidates the context every other
@@ -3532,9 +3533,9 @@ int cellular_hal_modem_factory_reset( void );
 * cellular_hal_set_modem_operating_configuration(). The only distinction this
 * interface draws between it and cellular_hal_modem_factory_reset() is in the names:
 * that call is a reset to factory defaults and discards the modem's configuration,
-* this one is a reset. What this call preserves is not established - see @post - so a
-* caller must not read the naming as a guarantee that configuration, profiles or an
-* installed callback survive it.
+* this one is a reset. What this call preserves is not established, as the
+* postcondition below records, so a caller must not read the naming as a guarantee
+* that configuration, profiles or an installed callback survive it.
 *
 * @returns The status of the operation.
 * @retval RETURN_OK    (0) - The reset has been accepted. It does not mean the modem
@@ -3570,9 +3571,9 @@ int cellular_hal_modem_factory_reset( void );
 *       performed.
 *
 * @note Blocking: synchronous. No timeout is specified, per 'Blocking calls' in
-*       docs/pages/halSpec.md, and a reset is a hardware operation that takes a
+*       the HAL specification, and a reset is a hardware operation that takes a
 *       perceptible time.
-* @warning Not thread safe. Per 'Threading Model' in docs/pages/halSpec.md the
+* @warning Not thread safe. Per 'Threading Model' in the HAL specification the
 *          obligation is the caller's: serialise this call against every other Cellular
 *          HAL call, including calls issued from another process. A concurrent call is
 *          especially unsafe here, because the reset invalidates the context every other
