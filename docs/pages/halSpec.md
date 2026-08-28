@@ -627,6 +627,8 @@ argument ranges, buffer sizes, pre-conditions and per-code return semantics for 
 by the inline documentation on its declaration in
 [cellular_hal.h](../../include/cellular_hal.h).
 
+**Where these pointers resolve.** The locators in this topic are relative paths into `include/cellular_hal.h`, the form this documentation set uses throughout, so they resolve on GitHub and in a checkout \- the surface a developer using this repository reads. They do **not** resolve from inside the generated documentation site: the generator copies each link target verbatim into a page one directory below this file, so a site served with `docs/output/html` as its root has nothing above that root to reach and answers `404`, and opened from the filesystem the same target does not exist. Follow a source pointer on GitHub or in a checkout; inside the generated site, reach the same declaration through its `Files` and function-index pages.
+
 **Modem detection and initialization**
 
 - `cellular_hal_IsModemDevicePresent()` \- reports whether a modem device is present. This call
@@ -792,6 +794,8 @@ HAL->>Caller: returns RETURN_OK or RETURN_ERROR
 under `Asynchronous Notification Model`, all in
 `cellular_hal.h`; the return vocabulary is the two codes named under
 `Internal Error Handling`.*
+
+Every diagram in this document is a fenced `mermaid` block. Such blocks render as diagrams on GitHub, which the repository's `README.md` symlink makes the primary reading surface for this specification; they do **not** render in the `HTML` the documentation generator produces, where the block appears as its source text instead. That limitation is stated here rather than worked around, because the only available workaround would fix the generated site at the cost of the surface most readers use.
 
 ### State Diagram
 
