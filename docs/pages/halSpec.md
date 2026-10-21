@@ -33,9 +33,9 @@
 The diagram below describes a high-level software architecture of the Cellular Manager HAL module stack.
 
 ```mermaid
-flowchart
-    Caller[Cellular Manager] <--> HAL[Cellular HAL - cellular_hal.h]
-    HAL <--> Vendor[Vendor Software]
+flowchart TD
+    Caller["Cellular Manager"] <--> HAL["Cellular HAL - cellular_hal.h"]
+    HAL <--> Vendor["Vendor Software"]
 ```
 
 Cellular Manager HAL is an abstraction layer through which the Cellular Manager, the `RDK-B`
