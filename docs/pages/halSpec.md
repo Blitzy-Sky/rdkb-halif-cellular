@@ -63,9 +63,9 @@ build, or to the caller's choice at the point of call.
 
 ### Initialization and Startup
 
-The initialization API below initializes the Cellular `HAL` layers and code.
+The initialization API below initializes the Cellular HAL layers and code.
 
-- `cellular_hal_init()` \- initializes the Cellular `HAL` from a `CellularContextInitInputStruct`.
+- `cellular_hal_init()` \- initializes the Cellular HAL from a `CellularContextInitInputStruct`.
   It must be invoked before any other operation.
 
 Three further calls belong to the startup path once initialization has completed.
@@ -79,7 +79,7 @@ Third party vendors will implement appropriately to meet operational requirement
 
 ### Threading Model
 
-Cellular `HAL` is not thread safe. Any module which is invoking the Cellular `HAL` API should ensure
+Cellular HAL is not thread safe. Any module which is invoking the Cellular HAL API should ensure
 calls are made in a thread safe manner.
 
 Vendors may create internal threads and events to meet their operational requirements. These are
@@ -112,7 +112,7 @@ The caller and the module each own the memory they allocate.
 - Copy any string or structure delivered to a callback that is needed after the callback returns,
   rather than retaining the pointer.
 - Bound every read of a character array by its declared or allocated size, and rely on a terminator
-  only where its documentation states one; `iccid` in `CellularUICCSlotInfoStruct` states none.
+  only where its documentation states one.
 
 #### Module Responsibilities
 
@@ -123,7 +123,7 @@ The caller and the module each own the memory they allocate.
 
 ### Power Management Requirements
 
-The Cellular `HAL` is not involved in any of the power management operations of the platform.
+The Cellular HAL is not involved in any of the power management operations of the platform.
 Modem and card power control is part of the functional surface instead:
 `cellular_hal_set_modem_operating_configuration()` accepts `CELLULAR_MODEM_SET_LOW_POWER_MODE`, and
 `cellular_hal_sim_power_enable()` powers a card slot on or off.
@@ -158,7 +158,7 @@ A callback author handles every callback on the following terms:
 
 ### Blocking calls
 
-Cellular `HAL` APIs are expected to work synchronously: each call returns its result to the caller,
+Cellular HAL APIs are expected to work synchronously: each call returns its result to the caller,
 and the outcome of an operation that installs a callback is reported later through that callback.
 Calls should complete within a time period commensurate with the complexity of the operation and in
 accordance with any relevant specification, and any call that can fail due to the lack of a response
@@ -178,12 +178,12 @@ Each call reports its result synchronously in its return value, which a caller r
 
 ### Persistence Model
 
-There is no requirement for the `HAL` to persist any setting information. The caller is responsible
+There is no requirement for the HAL to persist any setting information. The caller is responsible
 for persisting any settings related to its implementation.
 
 ## Non functional requirements
 
-The following non functional requirements should be supported by the Cellular `HAL` component.
+The following non functional requirements should be supported by the Cellular HAL component.
 
 ### Logging and debugging requirements
 
@@ -191,52 +191,41 @@ The component should log all error and critical informative messages, preferably
 which helps to debug and triage issues and to understand the functional flow of the system. The use
 of `printf` is discouraged unless `syslog` is not available.
 
-The logging should be consistent across all `HAL` components.
+The logging should be consistent across all HAL components.
 
 If the vendor is going to log, it has to be logged into the `cellular_vendor_hal.log` file, which
 can be placed in the `/rdklogs/logs/` directory.
 
-Logging should be defined with log levels as per Linux standard logging. The levels, in descending
-order of severity, are:
-
-- **FATAL:** Critical conditions, typically indicating a crash or a severe failure requiring
-  immediate attention.
-- **ERROR:** Non-fatal error conditions that nonetheless significantly impede normal operation.
-- **WARNING:** Potentially harmful situations that do not yet represent errors.
-- **NOTICE:** Important but not error-level events.
-- **INFO:** General informational messages that highlight system operation.
-- **DEBUG:** Detailed information useful when diagnosing a problem.
-- **TRACE:** Very fine-grained logging to trace the internal flow of the system.
+Log levels follow the Linux standard logging system, in descending order of severity: `FATAL`,
+`ERROR`, `WARNING`, `NOTICE`, `INFO`, `DEBUG` and `TRACE`. Each log entry carries a timestamp, the
+log level and a message describing the event or condition.
 
 Implementations must not log credentials, secrets, security-sensitive information, or other sensitive data.
-This applies at every severity, including DEBUG and TRACE, and to error messages, crash artefacts
+This applies at every severity, including `DEBUG` and `TRACE`, and to error messages, crash artefacts
 and telemetry. Where a message must identify the item an event concerns, it names the item and
 omits its value. The Cellular Manager handles the values it receives through this interface on the
 same terms.
 
 ### Memory and performance requirements
 
-The Cellular `HAL` must not contribute disproportionately to memory or CPU utilization while
+The Cellular HAL must not contribute disproportionately to memory or CPU utilization while
 performing normal operations, and its consumption should be commensurate with the operation
 required.
 
 ### Quality Control
 
-To ensure the highest quality and reliability, it is strongly recommended that third-party quality
-assurance tools such as `Coverity`, `Black Duck` and `Valgrind` be employed to thoroughly analyze
-the implementation. The goal is to detect and resolve potential issues such as memory leaks, memory
-corruption or other defects before deployment.
-
-Furthermore, both the `HAL` wrapper and any third-party software interacting with it must prioritize
-robust memory management practices. This includes meticulous allocation, deallocation and error
-handling to guarantee a stable and leak-free operation.
+An implementation should pass analysis with third-party tools such as `Coverity`, `Black Duck` and
+`Valgrind` without reported issues. Neither the HAL implementation nor the vendor software beneath
+it may introduce memory leaks or memory corruption.
 
 Any change to a file listed under `Source References` obliges a review of this document by the
-owner the repository's `CODEOWNERS` file names, `@rdkcentral/rdkb-hal-advisory`.
+repository's code owner, `@rdkcentral/rdkb-hal-advisory`.
 
 ### Licensing
 
-The Cellular `HAL` implementation is expected to be released under the Apache License 2.0.
+The interface definition is licensed under the Apache License 2.0, with the full text in `LICENSE`
+and the attribution notice in `NOTICE`. An implementation of this interface is expected to be
+released under the Apache License 2.0.
 
 ### Build Requirements
 
@@ -245,13 +234,10 @@ environment. The recipe should deliver a shared library named `cellularmanager.s
 
 ### Variability Management
 
-The role of adjusting the interface, guided by versioning, rests solely within architecture
-requirements. Thereafter, vendors are obliged to align their implementation with a designated
-version of the interface. As per Service Level Agreement (SLA) terms, they may transition to newer
-versions based on demand needs.
-
-Each API interface will be versioned using [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html); the
-vendor code will comply with a specific version of the interface.
+Changes to the interface are controlled by versioning. Vendors implement a designated version of the
+interface and move to later versions as their service agreements require. Each interface version
+follows [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html), and vendor code complies
+with a specific version.
 
 `CELLULAR_MGR_LITE` is the one compile-time variability point. It is supplied by the build and is
 never defined by `cellular_hal.h`.
@@ -271,16 +257,16 @@ compile-time variability through `CELLULAR_MGR_LITE` is described under `Variabi
 
 ## Interface API Documentation
 
-All `HAL` function prototypes and datatype definitions are available in the
+All HAL function prototypes and datatype definitions are available in the
 `cellular_hal.h` file.
 
-1. Components and processes must include `cellular_hal.h` to make use of Cellular Manager `HAL`
+1. Components and processes must include `cellular_hal.h` to make use of Cellular Manager HAL
    capabilities.
 2. Components and processes should add a linker dependency on `cellularmanager.so`.
 
 ### Theory of operation and key concepts
 
-The Cellular `HAL` presents the cellular modem, its cards and its packet data connectivity as a flat
+The Cellular HAL presents the cellular modem, its cards and its packet data connectivity as a flat
 set of C functions over an implicit, singleton device context. A caller initializes the layer, opens
 the modem device, selects a card slot, configures a `PDP` context profile and starts a packet data
 network; thereafter it reads signal, cell, registration and statistics values, and receives
@@ -290,26 +276,26 @@ asynchronous notification of the conditions listed under `Asynchronous Notificat
 
 | Aspect | Description |
 | --- | --- |
-| **Creation** | `cellular_hal_init()` initializes the Cellular `HAL` from a `CellularContextInitInputStruct`, configuring the resources and initial state required for operation. |
+| **Creation** | `cellular_hal_init()` initializes the Cellular HAL from a `CellularContextInitInputStruct`, configuring the resources and initial state required for operation. |
 | **Usage** | The initialized instance is then used for further cellular operations, such as managing network connections, querying device status and handling cellular events. |
 | **Destruction** | The interface declares no deinitialization call: `cellular_hal_stop_network()` stops a packet data network and does not tear down the layer. Applications handle clean-up as necessary when the cellular functionality is no longer required or before they terminate. |
-| **Unique Identifiers** | Operations apply to the single, implicit device context, so `HAL` instances carry no identifier. Slots, profiles and `PDP` contexts are identified by a slot identifier, a profile identifier and a `PDP` context number, with the sentinels `CELLULAR_SLOT_ID_UNKNOWN`, `CELLULAR_PROFILE_ID_UNKNOWN` and `CELLULAR_PDP_CONTEXT_UNKNOWN` for an identifier that is not present. |
+| **Unique Identifiers** | Operations apply to the single, implicit device context, so HAL instances carry no identifier. Slots, profiles and `PDP` contexts are identified by a slot identifier, a profile identifier and a `PDP` context number, with the sentinels `CELLULAR_SLOT_ID_UNKNOWN`, `CELLULAR_PROFILE_ID_UNKNOWN` and `CELLULAR_PDP_CONTEXT_UNKNOWN` for an identifier that is not present. |
 
 #### Method Sequencing
 
 | Aspect | Description |
 | --- | --- |
 | **Initialization** | `cellular_hal_init()` precedes every other call, preparing the cellular module for subsequent commands and configuration. |
-| **Logical Order** | Post-initialization, methods such as `cellular_hal_open_device()` and `cellular_hal_start_network()` should be called to establish network connectivity. Configuration changes typically precede action commands, such as setting parameters before starting a session or applying changes. |
-| **Callback Installation** | A caller that needs a notification issues the operation that installs its callback, as listed under `Asynchronous Notification Model`. |
+| **Logical order** | Post-initialization, methods such as `cellular_hal_open_device()` and `cellular_hal_start_network()` should be called to establish network connectivity. Configuration changes typically precede action commands, such as setting parameters before starting a session or applying changes. |
+| **Callback installation** | A caller that needs a notification issues the operation that installs its callback, as listed under `Asynchronous Notification Model`. |
 
 #### State-Dependent Behavior
 
 | Aspect | Description |
 | --- | --- |
-| **Implicit State Model** | The `HAL` maintains internal state implied by the functions available. For example, the modem must be initialized and in a ready state before certain actions can be performed. |
-| **State-Dependent Methods** | Many operations implicitly require the modem to be in specific states. For example, network operations like `cellular_hal_start_network()` can only be executed successfully if the device is correctly initialized and not currently in an error state. |
-| **Error Handling** | Implementations check that each operation is performed in a valid state and report a call that cannot be performed with `RETURN_ERROR`, as described under `Internal Error Handling`. |
+| **Implicit state model** | The HAL maintains internal state implied by the functions available. For example, the modem must be initialized and in a ready state before certain actions can be performed. |
+| **State-dependent methods** | Many operations implicitly require the modem to be in specific states. For example, network operations like `cellular_hal_start_network()` can only be executed successfully if the device is correctly initialized and not currently in an error state. |
+| **Error handling** | Implementations check that each operation is performed in a valid state and report a call that cannot be performed with `RETURN_ERROR`, as described under `Internal Error Handling`. |
 
 ### Data Structures and Defines
 
@@ -318,7 +304,7 @@ group. A caller constructs the input structures and configuration enumerations i
 output structures and status enumerations the interface fills. Field-level detail — units, valid
 ranges and buffer sizes — is documented on each member in the header.
 
-**Input structures a caller constructs**
+**Input structures a caller constructs:**
 
 | Type | Represents |
 | --- | --- |
@@ -327,7 +313,7 @@ ranges and buffer sizes — is documented on each member in the header.
 | `CellularDeviceContextCBStruct` | The callback container passed to `cellular_hal_open_device()`, carrying `device_open_status_cb` and `device_remove_status_cb`. |
 | `CellularNetworkCBStruct` | The callback container passed to `cellular_hal_start_network()`, carrying `device_network_ip_ready_cb` and `packet_service_status_cb`. |
 
-**Output structures the interface fills**
+**Output structures the interface fills:**
 
 | Type | Represents | Filled by |
 | --- | --- | --- |
@@ -339,7 +325,7 @@ ranges and buffer sizes — is documented on each member in the header.
 | `CellularCurrentPlmnInfoStruct` | The serving network: `PLMN` name, Mobile Country Code and Mobile Network Code, registration status, registered service type, roaming flag, area code and cell identifier. | `cellular_hal_get_current_plmn_information()` |
 | `CellularNetworkScanResultInfoStruct` | One scan result: network name, Mobile Country Code, Mobile Network Code and whether the network is allowed. | `cellular_hal_get_available_networks_information()` |
 
-**Configuration enumerations a caller supplies**
+**Configuration enumerations a caller supplies:**
 
 | Type | Represents |
 | --- | --- |
@@ -354,14 +340,14 @@ ranges and buffer sizes — is documented on each member in the header.
 | `CellularUICCFormFactor_t` | Physical card form factor, as a member of `CellularUICCSlotInfoStruct`. |
 | `CellularUICCApplication_t` | Card application type — Universal, IP Multimedia or embedded Subscriber Identity Module — as a member of `CellularUICCSlotInfoStruct`. |
 
-**Status enumerations the interface reports**, with their members and the call or callback that
-reports each, are listed under `State Diagram`.
+**Status enumerations the interface reports:** listed under `State Diagram`, with their members
+and the call or callback that reports each.
 
-**Callback types**, with the call that installs each and the condition each reports, are listed
-under `Asynchronous Notification Model`. `CellularDeviceContextCBStruct` and
+**Callback types:** listed under `Asynchronous Notification Model`, with the call that installs
+each and the condition each reports. `CellularDeviceContextCBStruct` and
 `CellularNetworkCBStruct` above are the containers that carry four of them.
 
-**Valued macros**
+**Valued macros:**
 
 | Macro | Value | Purpose |
 | --- | --- | --- |
@@ -383,20 +369,20 @@ under `Asynchronous Notification Model`. `CellularDeviceContextCBStruct` and
 buffer sizes, pre-conditions and per-code return semantics of each call are documented on its
 declaration in `cellular_hal.h`.
 
-**Modem detection and initialization**
+**Modem detection and initialization:**
 
 - `cellular_hal_IsModemDevicePresent()` \- reports whether a modem device is present, returning
   `TRUE` or `FALSE` rather than a status.
-- `cellular_hal_init()` \- initializes the Cellular `HAL` from a `CellularContextInitInputStruct`.
+- `cellular_hal_init()` \- initializes the Cellular HAL from a `CellularContextInitInputStruct`.
 
-**Device and control-interface lifecycle**
+**Device and control-interface lifecycle:**
 
 - `cellular_hal_open_device()` \- instructs the lower layer to create and open the modem device,
   installing the device open and device removed callbacks.
 - `cellular_hal_IsModemControlInterfaceOpened()` \- reports whether the modem control interface is
   open, returning `TRUE` or `FALSE` rather than a status.
 
-**SIM, UICC and slot handling**
+**SIM, UICC and slot handling:**
 
 - `cellular_hal_select_device_slot()` \- selects the card slot to use, reporting progress through the
   slot status callback.
@@ -406,25 +392,25 @@ declaration in `cellular_hal.h`.
 - `cellular_hal_get_active_card_status()` \- reports the active card's status as a
   `CellularUICCStatus_t`.
 
-**Network registration monitoring**
+**Network registration monitoring:**
 
 - `cellular_hal_monitor_device_registration()` \- instructs the lower layer to monitor network
   registration and installs the registration status callback.
 
-**Profile lifecycle**
+**Profile lifecycle:**
 
 - `cellular_hal_profile_create()` \- creates a `PDP` context profile.
 - `cellular_hal_profile_delete()` \- deletes the supplied profile.
 - `cellular_hal_profile_modify()` \- modifies the supplied profile.
 - `cellular_hal_get_profile_list()` \- returns the configured profiles together with a count.
 
-**Network start and stop**
+**Network start and stop:**
 
 - `cellular_hal_start_network()` \- starts the packet data network for an IP type and installs the
   packet service status and IP ready callbacks.
 - `cellular_hal_stop_network()` \- stops the packet data network for the given IP request type.
 
-**Radio resource and signal information**
+**Radio resource and signal information:**
 
 - `cellular_hal_get_signal_info()` \- fills a `CellularSignalInfoStruct` with the current signal
   measurements.
@@ -437,14 +423,14 @@ declaration in `cellular_hal.h`.
 - `cellular_hal_get_current_plmn_information()` \- fills a `CellularCurrentPlmnInfoStruct` with the
   serving network's identity, registration status and registered service type.
 
-**Modem configuration and attach**
+**Modem configuration and attach:**
 
 - `cellular_hal_set_modem_operating_configuration()` \- applies an operating command to the modem:
   online, offline, low power mode, reset or factory reset.
 - `cellular_hal_set_modem_network_attach()` \- attaches the modem to the network.
 - `cellular_hal_set_modem_network_detach()` \- detaches the modem from the network.
 
-**Identity queries**
+**Identity queries:**
 
 - `cellular_hal_get_device_imei()` \- reads the device `IMEI` into a caller-supplied buffer.
 - `cellular_hal_get_device_imei_sv()` \- reads the device `IMEI` together with its software version
@@ -453,7 +439,7 @@ declaration in `cellular_hal.h`.
 - `cellular_hal_get_modem_current_msisdn()` \- reads the `MSISDN` of the active subscription.
 - `cellular_hal_get_modem_firmware_version()` \- reads the modem firmware version.
 
-**Network scan and radio access technology**
+**Network scan and radio access technology:**
 
 - `cellular_hal_get_available_networks_information()` \- returns the networks found by a scan,
   together with a count.
@@ -462,7 +448,7 @@ declaration in `cellular_hal.h`.
 - `cellular_hal_get_modem_current_radio_technology()` \- reads the `RAT` currently in use.
 - `cellular_hal_get_modem_supported_radio_technology()` \- reads the set of RATs the modem supports.
 
-**Reset**
+**Reset:**
 
 - `cellular_hal_modem_factory_reset()` \- resets the modem to factory defaults.
 - `cellular_hal_modem_reset()` \- resets the modem.
@@ -470,7 +456,7 @@ declaration in `cellular_hal.h`.
 ### Sequence Diagram
 
 The exchange below shows a representative bring-up, a read and a teardown between the Cellular
-Manager, the Cellular `HAL` and the vendor software.
+Manager, the Cellular HAL and the vendor software.
 
 ```mermaid
 sequenceDiagram
@@ -545,3 +531,4 @@ The status enumerations it reports are the following.
 - [rdkcentral/rdkb-halif-cellular/CHANGELOG.md](https://github.com/rdkcentral/rdkb-halif-cellular/blob/develop/CHANGELOG.md) — release history recorded under `Version History`
 - [rdkcentral/rdkb-halif-cellular/.github/CODEOWNERS](https://github.com/rdkcentral/rdkb-halif-cellular/blob/develop/.github/CODEOWNERS) — owner responsible for reviewing this document
 - [rdkcentral/rdkb-halif-cellular/LICENSE](https://github.com/rdkcentral/rdkb-halif-cellular/blob/develop/LICENSE) — Apache License 2.0
+- [rdkcentral/rdkb-halif-cellular/NOTICE](https://github.com/rdkcentral/rdkb-halif-cellular/blob/develop/NOTICE) — attribution notice named under `Licensing`
