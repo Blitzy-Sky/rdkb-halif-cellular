@@ -95,18 +95,31 @@ The caller and the module each own the memory they allocate.
 
 #### Caller Responsibilities
 
-- Allocate every buffer and structure passed to or filled by a call, at the size the API
-  documentation states, and release it after use.
-- Read the returned count before indexing the list returned by `cellular_hal_get_profile_list()` or
-  `cellular_hal_get_available_networks_information()`.
+- Allocate and own every buffer, structure and pointer variable passed to a call, at the size the
+  API documentation states. Keep it allocated and unmoved, and an input also unmodified, until the
+  implementation's use of it ends, not merely until the call returns:
+  - the `CellularContextInitInputStruct` passed to `cellular_hal_init()`, the string passed to
+    `cellular_hal_set_modem_preferred_radio_technology()` and every output argument, for as long as
+    the caller uses the interface;
+  - a profile passed to `cellular_hal_profile_create()`, `cellular_hal_profile_delete()` or
+    `cellular_hal_profile_modify()`, until `cellular_device_profile_status_api_callback` reports the
+    outcome;
+  - a profile passed to `cellular_hal_start_network()`, while the network it started is running.
+- Pass `cellular_hal_get_profile_list()` and `cellular_hal_get_available_networks_information()` the
+  address of a pointer variable, which the implementation sets to the returned array; neither
+  allocate nor free that array. Read the returned count before indexing it, copy the elements needed
+  into the caller's own storage as soon as the call returns, and do not retain the array pointer.
 - Copy any string or structure delivered to a callback that is needed after the callback returns,
   rather than retaining the pointer.
+- Bound every read of a character array by its declared or allocated size, and rely on a terminator
+  only where its documentation states one; `iccid` in `CellularUICCSlotInfoStruct` states none.
 
 #### Module Responsibilities
 
 - Handle and deallocate memory used for its internal operations.
 - Release all internally allocated memory upon closure to prevent leaks.
-- Zero-terminate every character array it fills, within the declared size.
+- Zero-terminate a character array it fills, within the declared size, wherever that member's
+  documentation states a terminator.
 
 ### Power Management Requirements
 
@@ -120,7 +133,8 @@ Modem and card power control is part of the functional surface instead:
 Notifications are delivered by callback. The caller supplies a function pointer, either directly as
 an argument or as a member of a callback container structure, to the operation that starts the
 activity being reported on. There is no separate registration API, and an installed callback cannot
-be removed.
+be removed, so the caller keeps every callback function it installs callable for as long as it uses
+the interface.
 
 Seven callback types are declared. Each is a `typedef` of a function returning `int`, and an
 implementation of one returns `RETURN_OK` or `RETURN_ERROR` in the same way as a call into the
@@ -154,9 +168,7 @@ should have a timeout period in accordance with any relevant documentation.
 
 ### Internal Error Handling
 
-All the Cellular `HAL` APIs return errors synchronously as a return value. The `HAL` should handle
-recoverable errors gracefully and log critical issues for investigation; the interface level may not
-recover from severe system errors such as out of memory conditions.
+Each call reports its result synchronously in its return value, which a caller reads as follows.
 
 | Return value | Meaning | Caller action |
 | --- | --- | --- |
@@ -254,9 +266,8 @@ in both configurations.
 
 ### Platform or Product Customization
 
-The API surface, data types and return codes documented here are the same on every platform that
-ships `cellular_hal.h`; the only compile-time variation is `CELLULAR_MGR_LITE`, described under
-`Variability Management`. Platform-specific behaviour belongs behind the vendor implementation.
+Platform- or product-specific behaviour belongs behind the vendor implementation of `cellular_hal.h`;
+compile-time variability through `CELLULAR_MGR_LITE` is described under `Variability Management`.
 
 ## Interface API Documentation
 
