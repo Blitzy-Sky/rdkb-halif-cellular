@@ -30,7 +30,7 @@
 
 ## Description
 
-The diagram below describes a high-level software architecture of the Cellular Manager HAL module stack.
+The diagram below describes a high-level software architecture of the Cellular HAL module stack.
 
 ```mermaid
 flowchart TD
@@ -38,7 +38,7 @@ flowchart TD
     HAL <--> Vendor["Vendor Software"]
 ```
 
-Cellular Manager HAL is an abstraction layer through which the Cellular Manager, the `RDK-B`
+Cellular HAL is an abstraction layer through which the Cellular Manager, the `RDK-B`
 component this interface serves, interacts with vendor software to manage access to the cellular
 network, manage cellular modem power configuration, expose radio resource information of the
 cellular interface and manage `SIM` use.
@@ -219,7 +219,7 @@ An implementation should pass analysis with third-party tools such as `Coverity`
 it may introduce memory leaks or memory corruption.
 
 Any change to a file listed under `Source References` obliges a review of this document by the
-repository's code owner, `@rdkcentral/rdkb-hal-advisory`.
+code owner listed in `.github/CODEOWNERS`.
 
 ### Licensing
 
@@ -260,7 +260,7 @@ compile-time variability through `CELLULAR_MGR_LITE` is described under `Variabi
 All HAL function prototypes and datatype definitions are available in the
 `cellular_hal.h` file.
 
-1. Components and processes must include `cellular_hal.h` to make use of Cellular Manager HAL
+1. Components and processes must include `cellular_hal.h` to make use of Cellular HAL
    capabilities.
 2. Components and processes should add a linker dependency on `cellularmanager.so`.
 
