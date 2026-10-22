@@ -464,44 +464,44 @@ participant Caller as Cellular Manager
 participant HAL as Cellular HAL
 participant Vendor as Vendor Software
 Caller->>HAL: cellular_hal_init()
-HAL->>Caller: returns RETURN_OK or RETURN_ERROR
+HAL-->>Caller: returns RETURN_OK or RETURN_ERROR
 
 Caller->>HAL: cellular_hal_IsModemDevicePresent()
-HAL->>Caller: returns TRUE or FALSE for modem presence
+HAL-->>Caller: returns TRUE or FALSE for modem presence
 
 Caller->>HAL: cellular_hal_open_device() installing CellularDeviceContextCBStruct
-HAL->>Caller: returns RETURN_OK or RETURN_ERROR
+HAL-->>Caller: returns RETURN_OK or RETURN_ERROR
 Vendor->>HAL: modem device open progress and modem removal or detection
 HAL->>Caller: cellular_device_open_status_api_callback()
 HAL->>Caller: cellular_device_removed_status_api_callback()
 
 Caller->>HAL: cellular_hal_select_device_slot() installing device_slot_status_cb
-HAL->>Caller: returns RETURN_OK or RETURN_ERROR
+HAL-->>Caller: returns RETURN_OK or RETURN_ERROR
 Vendor->>HAL: card slot selection progress
 HAL->>Caller: cellular_device_slot_status_api_callback()
 
 Caller->>HAL: cellular_hal_monitor_device_registration() installing device_registration_status_cb
-HAL->>Caller: returns RETURN_OK or RETURN_ERROR
+HAL-->>Caller: returns RETURN_OK or RETURN_ERROR
 Vendor->>HAL: network registration and roaming change
 HAL->>Caller: cellular_device_registration_status_callback()
 
 Caller->>HAL: cellular_hal_profile_create() installing device_profile_status_cb
-HAL->>Caller: returns RETURN_OK or RETURN_ERROR
+HAL-->>Caller: returns RETURN_OK or RETURN_ERROR
 Vendor->>HAL: outcome of the profile operation
 HAL->>Caller: cellular_device_profile_status_api_callback()
 
 Caller->>HAL: cellular_hal_start_network() installing CellularNetworkCBStruct
-HAL->>Caller: returns RETURN_OK or RETURN_ERROR
+HAL-->>Caller: returns RETURN_OK or RETURN_ERROR
 Vendor->>HAL: packet service connected or disconnected
 HAL->>Caller: cellular_network_packet_service_status_api_callback()
 Vendor->>HAL: IP configuration readiness with the populated CellularIPStruct
 HAL->>Caller: cellular_device_network_ip_ready_api_callback()
 
 Caller->>HAL: cellular_hal_get_signal_info()
-HAL->>Caller: returns RETURN_OK or RETURN_ERROR with the filled signal structure
+HAL-->>Caller: returns RETURN_OK or RETURN_ERROR with the filled signal structure
 
 Caller->>HAL: cellular_hal_stop_network()
-HAL->>Caller: returns RETURN_OK or RETURN_ERROR
+HAL-->>Caller: returns RETURN_OK or RETURN_ERROR
 ```
 
 ### State Diagram
