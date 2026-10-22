@@ -1,1 +1,1 @@
-docs/pages/CellularHalSpec.md
+docs/pages/halSpec.md
